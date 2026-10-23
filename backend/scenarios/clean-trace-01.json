@@ -9,10 +9,10 @@
   },
   "seed": 1042,
   "topology": [
-    {"id": "SUP-ATLAS", "type": "supplier", "name": "Atlas Ingredients"},
-    {"id": "PLANT-A", "type": "processing_plant", "name": "Plant A"},
-    {"id": "DC-EAST", "type": "distribution_center", "name": "East Distribution Centre"},
-    {"id": "STORE-014", "type": "store", "name": "Store 014"}
+    {"id": "SUP-ATLAS", "type": "supplier", "name": "Atlas Ingredients", "region": "east"},
+    {"id": "PLANT-A", "type": "processing_plant", "name": "Plant A", "region": "east"},
+    {"id": "DC-EAST", "type": "distribution_center", "name": "East Distribution Centre", "region": "east"},
+    {"id": "STORE-014", "type": "store", "name": "Store 014", "region": "east"}
   ],
   "products": [
     {"id": "ING-OATS", "name": "Rolled oats", "kind": "ingredient"},
