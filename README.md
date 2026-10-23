@@ -75,6 +75,10 @@ hidden ground truth and are not yet wired to agents or actions. Phase 4 adds
 private in-memory inventory balances, order allocation, dispatch and hold transitions,
 in-transit shipment exceptions, an append-only audit, and a reset that restores
 the operational snapshot byte-for-byte. The audit remains separate so reset
-history is not erased. Policy-gated action execution has not started; Phase 4
-is awaiting review before Phase 5.
+history is not erased. Phase 5 adds a deterministic, fail-closed policy decision
+layer for the four allowed actions. It checks typed IDs, graph evidence,
+duplicate actions, trace gaps, scope, prohibited actions, and the one-correction
+limit. Autonomous containment above 1,000 units or across regions requires
+trusted human approval; missing trace records force escalation. Policy-approved
+action execution is still Phase 6, and Phase 5 is awaiting review.
 

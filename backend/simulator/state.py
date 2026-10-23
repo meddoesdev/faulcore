@@ -14,7 +14,7 @@ from typing import Literal
 import networkx as nx
 
 from backend.scenarios.graph import build_trace_graph
-from backend.scenarios.loader import ScenarioManifest
+from backend.scenarios.loader import ScenarioManifest, operational_digest
 
 
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
@@ -70,6 +70,7 @@ class ScenarioState:
 
     def __init__(self, manifest: ScenarioManifest) -> None:
         self.scenario_id = manifest.scenario.id
+        self.manifest_digest = operational_digest(manifest)
         self._lot_products = {lot.id: lot.product_id for lot in manifest.lots}
         self._locations = {facility.id for facility in manifest.topology}
         self._graph = nx.freeze(build_trace_graph(manifest))

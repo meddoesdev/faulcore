@@ -1,5 +1,6 @@
 """Strict, private scenario manifest loading. Never serialize a manifest to an API."""
 
+import hashlib
 import json
 from datetime import datetime
 from pathlib import Path
@@ -18,6 +19,7 @@ class Facility(ManifestModel):
     id: str = Field(min_length=1)
     type: Literal["supplier", "processing_plant", "distribution_center", "store"]
     name: str = Field(min_length=1)
+    region: str = Field(min_length=1, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 class Product(ManifestModel):
@@ -165,3 +167,10 @@ def bundled_manifest(scenario_id: str) -> ScenarioManifest:
     if scenario_id != "clean-trace-01":
         raise FileNotFoundError(f"scenario {scenario_id} is not implemented")
     return load_manifest(Path(__file__).with_name("clean-trace-01.json"))
+
+
+def operational_digest(manifest: ScenarioManifest) -> str:
+    """Fingerprint operational records only, excluding hidden evaluation truth."""
+    payload = manifest.model_dump(mode="json", exclude={"ground_truth"})
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
