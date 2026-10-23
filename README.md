@@ -71,6 +71,10 @@ built in Phase 8. Policy checks, action execution, scoring, and completed runs
 have not started. Phase 3 adds six read-only deterministic
 trace tools for backward/forward traversal, descendant lots, inventory lookup,
 quantity reconciliation, and traceability-gap detection. The tools retain no
-hidden ground truth and are not yet wired to agents or actions. Phase 3 is
-awaiting its review gate before simulated state and mutations begin.
+hidden ground truth and are not yet wired to agents or actions. Phase 4 adds
+private in-memory inventory balances, order allocation, dispatch and hold transitions,
+in-transit shipment exceptions, an append-only audit, and a reset that restores
+the operational snapshot byte-for-byte. The audit remains separate so reset
+history is not erased. Policy-gated action execution has not started; Phase 4
+is awaiting review before Phase 5.
 
