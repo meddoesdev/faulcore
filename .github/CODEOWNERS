@@ -1,11 +1,17 @@
-# Replace or extend these entries when Person B's GitHub username is known.
+# Person A-owned implementation
 /frontend/ @meddoesdev
 /backend/agents/ @meddoesdev
 
-# Shared contracts currently request review from the known repository owner.
-# Add Person B here before shared-model changes are merged.
-/backend/models/ @meddoesdev
-/README.md @meddoesdev
-/AGENTS.md @meddoesdev
-/.github/CODEOWNERS @meddoesdev
+# Person B-owned implementation
+/backend/api/ @mridhu1k
+/backend/policy/ @mridhu1k
+/backend/simulator/ @mridhu1k
+/backend/scenarios/ @mridhu1k
 
+# Shared contracts and repository guidance
+/backend/models/ @meddoesdev @mridhu1k
+/docs/ @meddoesdev @mridhu1k
+/README.md @meddoesdev @mridhu1k
+/AGENTS.md @meddoesdev @mridhu1k
+/.gitignore @meddoesdev @mridhu1k
+/.github/CODEOWNERS @meddoesdev @mridhu1k

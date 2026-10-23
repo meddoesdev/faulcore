@@ -1,0 +1,18 @@
+{
+  "scenario_id": "broken-trace-01",
+  "nodes": [
+    {"id":"ING-3099","type":"supplier_lot","label":"Ingredient ING-3099","exposure":"confirmed","metadata":{"supplier":"Birch Foods"}},
+    {"id":"TX-440","type":"transformation","label":"Transformation TX-440","exposure":"confirmed","metadata":{"facility":"Plant Central"}},
+    {"id":"LOT-N18","type":"facility","label":"Original lot N-18","exposure":"confirmed","inventory_state":"held","metadata":{"units":480}},
+    {"id":"RELABEL-MISSING","type":"transformation","label":"Missing relabelling map","exposure":"possible","metadata":{"record_status":"missing"}},
+    {"id":"LOT-R-UNKNOWN","type":"distribution_center","label":"Unknown replacement lots","exposure":"possible","inventory_state":"held","metadata":{"units":920}},
+    {"id":"STORE-GROUP-7","type":"store","label":"Regional store group 7","exposure":"possible","inventory_state":"held","metadata":{"locations":8}}
+  ],
+  "edges": [
+    {"id":"e1","source":"ING-3099","target":"TX-440","exposure":"confirmed"},
+    {"id":"e2","source":"TX-440","target":"LOT-N18","exposure":"confirmed"},
+    {"id":"e3","source":"LOT-N18","target":"RELABEL-MISSING","exposure":"possible","label":"unresolved mapping"},
+    {"id":"e4","source":"RELABEL-MISSING","target":"LOT-R-UNKNOWN","exposure":"possible"},
+    {"id":"e5","source":"LOT-R-UNKNOWN","target":"STORE-GROUP-7","exposure":"possible"}
+  ]
+}

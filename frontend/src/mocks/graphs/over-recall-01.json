@@ -1,0 +1,22 @@
+{
+  "scenario_id": "over-recall-01",
+  "nodes": [
+    {"id":"ING-2010","type":"supplier_lot","label":"Older lot ING-2010","exposure":"confirmed","metadata":{"supplier":"Atlas Ingredients"}},
+    {"id":"ING-2011","type":"supplier_lot","label":"Recent lot ING-2011","exposure":"excluded","inventory_state":"cleared","metadata":{"supplier":"Atlas Ingredients"}},
+    {"id":"TX-330","type":"transformation","label":"Affected transformation","exposure":"confirmed","metadata":{"facility":"Plant North"}},
+    {"id":"TX-331","type":"transformation","label":"Safe transformation","exposure":"excluded","metadata":{"facility":"Plant South"}},
+    {"id":"LOT-G31","type":"facility","label":"Granola G-31","exposure":"confirmed","inventory_state":"held","metadata":{"units":610}},
+    {"id":"LOT-G32","type":"facility","label":"Granola G-32","exposure":"excluded","inventory_state":"cleared","metadata":{"units":1400}},
+    {"id":"DC-WEST","type":"distribution_center","label":"West Distribution Centre","exposure":"confirmed","inventory_state":"held","metadata":{"units":610}},
+    {"id":"STORE-052","type":"store","label":"Store 052","exposure":"excluded","inventory_state":"cleared","metadata":{"units":1400}}
+  ],
+  "edges": [
+    {"id":"e1","source":"ING-2010","target":"TX-330","exposure":"confirmed"},
+    {"id":"e2","source":"TX-330","target":"LOT-G31","exposure":"confirmed"},
+    {"id":"e3","source":"LOT-G31","target":"DC-WEST","exposure":"confirmed"},
+    {"id":"e4","source":"ING-2011","target":"TX-331","exposure":"excluded"},
+    {"id":"e5","source":"TX-331","target":"LOT-G32","exposure":"excluded"},
+    {"id":"e6","source":"LOT-G32","target":"STORE-052","exposure":"excluded"}
+  ]
+}
+
