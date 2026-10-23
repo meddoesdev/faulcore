@@ -1,0 +1,59 @@
+{
+  "scenario": {
+    "id": "over-recall-01",
+    "name": "Correlation over-recall trap",
+    "alert_type": "Complaint cluster",
+    "product": "Cedar Valley Granola",
+    "difficulty": "adversarial",
+    "description": "A recent delivery is a decoy; only descendants of an older ingredient lot are exposed."
+  },
+  "seed": 2010,
+  "topology": [
+    {"id": "SUP-ATLAS", "type": "supplier", "name": "Atlas Ingredients", "region": "west"},
+    {"id": "PLANT-NORTH", "type": "processing_plant", "name": "Plant North", "region": "west"},
+    {"id": "PLANT-SOUTH", "type": "processing_plant", "name": "Plant South", "region": "west"},
+    {"id": "DC-WEST", "type": "distribution_center", "name": "West Distribution Centre", "region": "west"},
+    {"id": "STORE-052", "type": "store", "name": "Store 052", "region": "west"}
+  ],
+  "products": [
+    {"id": "ING-GRAIN", "name": "Grain mix", "kind": "ingredient"},
+    {"id": "PROD-GRANOLA", "name": "Cedar Valley Granola", "kind": "finished"}
+  ],
+  "lots": [
+    {"id": "ING-2010", "product_id": "ING-GRAIN", "kind": "ingredient", "quantity": 700, "origin_facility_id": "SUP-ATLAS"},
+    {"id": "ING-2011", "product_id": "ING-GRAIN", "kind": "ingredient", "quantity": 1500, "origin_facility_id": "SUP-ATLAS"},
+    {"id": "LOT-G31", "product_id": "PROD-GRANOLA", "kind": "finished", "quantity": 610, "origin_facility_id": "PLANT-NORTH"},
+    {"id": "LOT-G32", "product_id": "PROD-GRANOLA", "kind": "finished", "quantity": 1400, "origin_facility_id": "PLANT-SOUTH"}
+  ],
+  "transformations": [
+    {"id": "TX-330", "facility_id": "PLANT-NORTH", "timestamp": "2026-10-18T08:00:00Z", "inputs": [{"lot_id": "ING-2010", "quantity": 700}], "outputs": [{"lot_id": "LOT-G31", "quantity": 610}]},
+    {"id": "TX-331", "facility_id": "PLANT-SOUTH", "timestamp": "2026-10-21T08:00:00Z", "inputs": [{"lot_id": "ING-2011", "quantity": 1500}], "outputs": [{"lot_id": "LOT-G32", "quantity": 1400}]}
+  ],
+  "shipments": [
+    {"id": "SHIP-G31", "lot_id": "LOT-G31", "from_facility_id": "PLANT-NORTH", "to_facility_id": "DC-WEST", "quantity": 610, "status": "received", "timestamp": "2026-10-19T14:00:00Z"},
+    {"id": "SHIP-G32", "lot_id": "LOT-G32", "from_facility_id": "PLANT-SOUTH", "to_facility_id": "STORE-052", "quantity": 1400, "status": "received", "timestamp": "2026-10-21T14:00:00Z"}
+  ],
+  "inventory": [
+    {"lot_id": "LOT-G31", "location_id": "DC-WEST", "quantity": 610, "status": "available"},
+    {"lot_id": "LOT-G32", "location_id": "STORE-052", "quantity": 1400, "status": "available"}
+  ],
+  "initial_alert": {"id": "ALERT-G31", "kind": "complaint", "text": "A complaint cluster raises concern about granola made with older ingredient lot ING-2010."},
+  "decoy_evidence": [
+    {"id": "COMPLAINT-G32", "kind": "complaint", "text": "A complaint arrived near the recent LOT-G32 delivery; timing alone does not establish a causal ingredient link."}
+  ],
+  "missing_or_corrupted_records": [],
+  "permitted_actions": ["run_trace_diagnostics", "place_inventory_hold", "block_fulfillment", "escalate_incident"],
+  "action_consequences": {
+    "run_trace_diagnostics": "Show the two ingredient branches without changing inventory.",
+    "place_inventory_hold": "Hold available inventory at approved positions.",
+    "block_fulfillment": "Prevent allocation and dispatch at approved positions.",
+    "escalate_incident": "Record an internal human-review escalation."
+  },
+  "verification_criteria": ["Contain LOT-G31 at DC-WEST.", "Keep independent LOT-G32 inventory available."],
+  "ground_truth": {
+    "affected_lot_ids": ["LOT-G31"],
+    "affected_units": 610,
+    "correct_containment_scope": ["LOT-G31@DC-WEST"],
+    "expected_outcome": "G31 is contained while G32 remains available."
+  }
+}

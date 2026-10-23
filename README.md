@@ -54,17 +54,16 @@ python -m pytest backend/tests
 
 The backend package structure, shared API models, structured JSON error
 handling, and Phase 1 routes are in place. Start the API with
-`python -m uvicorn backend.api.app:app --reload`. The `clean-trace-01` card and
-graph now load from a validated JSON manifest. Run creation and polling remain
+`python -m uvicorn backend.api.app:app --reload`. All three scenario cards and
+graphs now load from validated JSON manifests. Run creation and polling remain
 Phase 1 mocks; a run stays `running` until later phases implement execution.
 
 ## Current status
 
-Person B's Phase 1–6 backend work is present on stacked review branches. The
+Person B's Phase 1–8 backend work is present on stacked review branches. The
 shared API models and Phase 1 FastAPI shell provide the agreed four routes.
-Phase 2 adds a validated `clean-trace-01` manifest and deterministic graph;
-the other two scenario graph routes remain `404` until Phase 8. Phase 3 adds
-six read-only trace tools. Phase 4 adds private in-memory inventory, orders,
+Phase 2 adds a validated `clean-trace-01` manifest and deterministic graph.
+Phase 3 adds six read-only trace tools. Phase 4 adds private in-memory inventory, orders,
 shipments, an append-only audit, and deterministic reset. Phase 5 adds the
 fail-closed policy checks for the four permitted actions; large or multi-region
 containment requires trusted human approval, and missing trace records force
@@ -76,11 +75,14 @@ adds private post-action scoring for FaultCore and baseline runs. It checks
 affected inventory, orders, and in-transit shipments, then calculates
 containment precision and recall, safe inventory preservation, under- and
 over-containment rates, and time to complete containment. Hidden ground truth
-is read only by this verification layer.
+is read only by this verification layer. Phase 8 adds the `over-recall-01` and
+`broken-trace-01` manifests and public
+graphs. The first has independent affected and safe branches; the second shows
+the missing relabelling record without inventing a causal link. Both use the
+existing policy and scoring behavior.
 
 These components are not yet wired into completed API runs or Person A's agent
 orchestration. `POST /api/runs` still returns a mock run that remains `running`;
-the Phase 7 scorer is not yet called by the API. Additional manifests are
-Phase 8, and the live run lifecycle is Phase 9. No action reaches an external
-system.
+the Phase 7 scorer is not yet called by the API. The live run lifecycle is
+Phase 9. No action reaches an external system.
 

@@ -31,6 +31,11 @@ def build_trace_graph(manifest: ScenarioManifest) -> nx.MultiDiGraph:
             edge = GraphEdge(id=f"{event.id}:out:{item.lot_id}", source=event.id,
                              target=item.lot_id, exposure="possible", label="produced")
             graph.add_edge(edge.source, edge.target, key=edge.id, public=edge)
+    for record_id in manifest.missing_or_corrupted_records:
+        graph.add_node(record_id, public=GraphNode(
+            id=record_id, type="transformation", label=f"Missing record {record_id}",
+            exposure="possible", metadata={"record_status": "missing"},
+        ))
     destinations = {shipment.to_facility_id for shipment in manifest.shipments}
     for facility in manifest.topology:
         if facility.id not in destinations:

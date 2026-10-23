@@ -1,0 +1,55 @@
+{
+  "scenario": {
+    "id": "broken-trace-01",
+    "name": "Broken relabelling chain",
+    "alert_type": "Supplier contamination notice",
+    "product": "Northstar Almond Bites",
+    "difficulty": "critical",
+    "description": "A missing relabelling map prevents a defensible narrow containment boundary."
+  },
+  "seed": 3099,
+  "topology": [
+    {"id": "SUP-BIRCH", "type": "supplier", "name": "Birch Foods", "region": "north"},
+    {"id": "PLANT-CENTRAL", "type": "processing_plant", "name": "Plant Central", "region": "north"},
+    {"id": "STORE-GROUP-7", "type": "store", "name": "Regional Store Group 7", "region": "north"}
+  ],
+  "products": [
+    {"id": "ING-ALMOND", "name": "Almond ingredient", "kind": "ingredient"},
+    {"id": "PROD-BITES", "name": "Northstar Almond Bites", "kind": "finished"}
+  ],
+  "lots": [
+    {"id": "ING-3099", "product_id": "ING-ALMOND", "kind": "ingredient", "quantity": 600, "origin_facility_id": "SUP-BIRCH"},
+    {"id": "LOT-N18", "product_id": "PROD-BITES", "kind": "finished", "quantity": 480, "origin_facility_id": "PLANT-CENTRAL"},
+    {"id": "LOT-R-UNKNOWN", "product_id": "PROD-BITES", "kind": "finished", "quantity": 920, "origin_facility_id": "PLANT-CENTRAL"}
+  ],
+  "transformations": [
+    {"id": "TX-440", "facility_id": "PLANT-CENTRAL", "timestamp": "2026-10-20T08:00:00Z", "inputs": [{"lot_id": "ING-3099", "quantity": 600}], "outputs": [{"lot_id": "LOT-N18", "quantity": 480}]}
+  ],
+  "shipments": [
+    {"id": "SHIP-N18", "lot_id": "LOT-N18", "from_facility_id": "PLANT-CENTRAL", "to_facility_id": "STORE-GROUP-7", "quantity": 480, "status": "received", "timestamp": "2026-10-20T14:00:00Z"},
+    {"id": "SHIP-R-UNKNOWN", "lot_id": "LOT-R-UNKNOWN", "from_facility_id": "PLANT-CENTRAL", "to_facility_id": "STORE-GROUP-7", "quantity": 920, "status": "received", "timestamp": "2026-10-21T14:00:00Z"}
+  ],
+  "inventory": [
+    {"lot_id": "LOT-N18", "location_id": "STORE-GROUP-7", "quantity": 480, "status": "available"},
+    {"lot_id": "LOT-R-UNKNOWN", "location_id": "STORE-GROUP-7", "quantity": 920, "status": "available"}
+  ],
+  "initial_alert": {"id": "ALERT-N18", "kind": "supplier_notice", "text": "Birch Foods flags ING-3099; the replacement lot source mapping is missing."},
+  "decoy_evidence": [
+    {"id": "NOTICE-R", "kind": "warehouse_note", "text": "A 920-unit replacement-labelled lot is present; its source ingredient is unverified."}
+  ],
+  "missing_or_corrupted_records": ["RELABEL-MISSING"],
+  "permitted_actions": ["run_trace_diagnostics", "place_inventory_hold", "block_fulfillment", "escalate_incident"],
+  "action_consequences": {
+    "run_trace_diagnostics": "Expose known records and the absent relabelling map without assuming a link.",
+    "place_inventory_hold": "Hold only positions approved by policy.",
+    "block_fulfillment": "Block only positions approved by policy.",
+    "escalate_incident": "Record an internal human-review escalation."
+  },
+  "verification_criteria": ["Escalate the missing relabelling map.", "Never claim a causal path to LOT-R-UNKNOWN without evidence."],
+  "ground_truth": {
+    "affected_lot_ids": ["LOT-N18"],
+    "affected_units": 480,
+    "correct_containment_scope": ["LOT-N18@STORE-GROUP-7"],
+    "expected_outcome": "Escalate the unresolved replacement mapping; do not infer its source."
+  }
+}
