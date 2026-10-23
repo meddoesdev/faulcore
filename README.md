@@ -71,10 +71,16 @@ containment requires trusted human approval, and missing trace records force
 escalation. Phase 6 adds an internal action executor: diagnostics, inventory
 holds, fulfillment blocks, and incident escalation all pass policy first,
 record an audit outcome, and run a post-action verification query. Reset clears
-both operational state and executed-action history for another demo run.
+both operational state and executed-action history for another demo run. Phase 7
+adds private post-action scoring for FaultCore and baseline runs. It checks
+affected inventory, orders, and in-transit shipments, then calculates
+containment precision and recall, safe inventory preservation, under- and
+over-containment rates, and time to complete containment. Hidden ground truth
+is read only by this verification layer.
 
 These components are not yet wired into completed API runs or Person A's agent
 orchestration. `POST /api/runs` still returns a mock run that remains `running`;
-verification metrics and scoring are Phase 7, additional manifests are Phase 8,
-and the live run lifecycle is Phase 9. No action reaches an external system.
+the Phase 7 scorer is not yet called by the API. Additional manifests are
+Phase 8, and the live run lifecycle is Phase 9. No action reaches an external
+system.
 
