@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { StatusPill } from '../components/StatusPill'
 import { ExposureGraph } from '../components/graph/ExposureGraph'
+import { ReviewWorkspace } from '../components/review/ReviewWorkspace'
 import { useGraph } from '../hooks/useGraph'
 import type { GraphNode, Scenario } from '../types'
 
@@ -136,6 +137,8 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
           <div className="containment-footer"><MapPin size={14} /><span>{nodes.filter((node) => node.type === 'store' || node.type === 'distribution_center').length} destination groups in evidence</span></div>
         </section>
       </div>
+
+      <ReviewWorkspace scenarioId={scenario.id} />
     </div>
   )
 }
