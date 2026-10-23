@@ -56,7 +56,12 @@ export function AppShell({ view, incidentLabel, onNavigate, children }: AppShell
             <ChevronsLeftRightEllipsis size={19} />
             <span>Trace</span>
           </button>
-          <button className="rail-button" disabled aria-label="Verification, available in Phase 4">
+          <button
+            className="rail-button"
+            disabled={!incidentLabel}
+            onClick={() => document.getElementById('verification-heading')?.scrollIntoView({ behavior: 'smooth' })}
+            aria-label="Verification"
+          >
             <ShieldCheck size={19} />
             <span>Verify</span>
           </button>

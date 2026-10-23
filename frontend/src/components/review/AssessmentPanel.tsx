@@ -21,6 +21,7 @@ function ScopeGroup({ label, ids, tone }: { label: string; ids: string[]; tone: 
 
 export function AssessmentPanel({ assessment, role, visible }: AssessmentPanelProps) {
   const isReviewer = role === 'reviewer'
+  const isBaseline = assessment?.agent === 'baseline'
 
   if (!visible) {
     return (
@@ -49,9 +50,9 @@ export function AssessmentPanel({ assessment, role, visible }: AssessmentPanelPr
       <header className="assessment-header">
         <div className="agent-identity">
           <span className="agent-icon">{isReviewer ? <ShieldCheck size={18} /> : <FileSearch size={18} />}</span>
-          <div><small>{isReviewer ? 'Independent control' : 'Primary analysis'}</small><h3>{isReviewer ? 'Scope Reviewer' : 'Trace Investigator'}</h3></div>
+          <div><small>{isReviewer ? 'Independent control' : isBaseline ? 'Reference workflow' : 'Primary analysis'}</small><h3>{isReviewer ? 'Scope Reviewer' : isBaseline ? 'Single Agent Baseline' : 'Trace Investigator'}</h3></div>
         </div>
-        <StatusPill tone={isReviewer ? 'cleared' : 'neutral'}>{isReviewer ? 'Blind review' : 'Committed'}</StatusPill>
+        <StatusPill tone={isReviewer ? 'cleared' : 'neutral'}>{isReviewer ? 'Blind review' : isBaseline ? 'Baseline' : 'Committed'}</StatusPill>
       </header>
 
       {isReviewer && <div className="isolation-banner"><EyeOff size={13} /><span>Investigator output was not present in this agent’s input state</span></div>}
@@ -89,4 +90,3 @@ export function AssessmentPanel({ assessment, role, visible }: AssessmentPanelPr
     </section>
   )
 }
-
