@@ -1,6 +1,6 @@
 """Deterministic, fail-closed policy checks for proposed simulator actions.
 
-This module only decides. Phase 6 will execute approved actions and verify them.
+This module only decides. The Phase 6 executor applies approved actions.
 Human approval and correction history are trusted application context, never
 fields supplied by an agent or by untrusted evidence text.
 """
@@ -177,10 +177,18 @@ class PolicyEngine:
             return _check("duplicate_action", "fail", "Cannot compare malformed targets.")
         duplicate = self.action_key(request) in context.executed_action_keys
         if request.action == "place_inventory_hold":
+            recent_events = state.audit_events
+            reset_at = max((index for index, event in enumerate(recent_events)
+                            if event.action == "reset"), default=-1)
             held = {(event.inputs.get("lot_id"), event.inputs.get("location_id"))
-                    for event in state.audit_events if event.action == "place_hold"}
+                    for event in recent_events[reset_at + 1:] if event.action == "place_hold"}
             duplicate = duplicate or any((item.lot_id, item.location_id) in held
                                          for item in request.targets)
+        if request.action == "block_fulfillment":
+            duplicate = duplicate or any(
+                (item.lot_id, item.location_id) in state.blocked_positions
+                for item in request.targets
+            )
         return _check("duplicate_action", "fail" if duplicate else "pass",
                       "Duplicate action is blocked." if duplicate else "Action has not already executed.")
 

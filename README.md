@@ -60,25 +60,21 @@ Phase 1 mocks; a run stays `running` until later phases implement execution.
 
 ## Current status
 
-Phase 0 and Phase 1 are complete: Person A's frontend and agent schema
-scaffolds are present, shared Pydantic API contracts are merged, and Person B's
-FastAPI shell serves the agreed four routes with structured errors. Phase 2
-adds the first real scenario manifest (`clean-trace-01`), strict loading,
-deterministic NetworkX graph construction, and tests that check hidden ground
-truth is not serialized to the scenario or graph API. The other two cards are
-still placeholders; their graph routes return `404` until their manifests are
-built in Phase 8. Policy checks, action execution, scoring, and completed runs
-have not started. Phase 3 adds six read-only deterministic
-trace tools for backward/forward traversal, descendant lots, inventory lookup,
-quantity reconciliation, and traceability-gap detection. The tools retain no
-hidden ground truth and are not yet wired to agents or actions. Phase 4 adds
-private in-memory inventory balances, order allocation, dispatch and hold transitions,
-in-transit shipment exceptions, an append-only audit, and a reset that restores
-the operational snapshot byte-for-byte. The audit remains separate so reset
-history is not erased. Phase 5 adds a deterministic, fail-closed policy decision
-layer for the four allowed actions. It checks typed IDs, graph evidence,
-duplicate actions, trace gaps, scope, prohibited actions, and the one-correction
-limit. Autonomous containment above 1,000 units or across regions requires
-trusted human approval; missing trace records force escalation. Policy-approved
-action execution is still Phase 6, and Phase 5 is awaiting review.
+Person B's Phase 1–6 backend work is present on stacked review branches. The
+shared API models and Phase 1 FastAPI shell provide the agreed four routes.
+Phase 2 adds a validated `clean-trace-01` manifest and deterministic graph;
+the other two scenario graph routes remain `404` until Phase 8. Phase 3 adds
+six read-only trace tools. Phase 4 adds private in-memory inventory, orders,
+shipments, an append-only audit, and deterministic reset. Phase 5 adds the
+fail-closed policy checks for the four permitted actions; large or multi-region
+containment requires trusted human approval, and missing trace records force
+escalation. Phase 6 adds an internal action executor: diagnostics, inventory
+holds, fulfillment blocks, and incident escalation all pass policy first,
+record an audit outcome, and run a post-action verification query. Reset clears
+both operational state and executed-action history for another demo run.
+
+These components are not yet wired into completed API runs or Person A's agent
+orchestration. `POST /api/runs` still returns a mock run that remains `running`;
+verification metrics and scoring are Phase 7, additional manifests are Phase 8,
+and the live run lifecycle is Phase 9. No action reaches an external system.
 

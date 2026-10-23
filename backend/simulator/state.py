@@ -1,6 +1,6 @@
 """Private, in-memory operational state; not an agent action interface.
 
-Policy and action dispatch are deliberately deferred to Phases 5 and 6.
+Action dispatch lives in the separate Phase 6 executor.
 No hidden ground truth is retained here.
 """
 
@@ -65,6 +65,21 @@ class HoldResult:
     duplicate: bool
 
 
+@dataclass(frozen=True)
+class BlockResult:
+    flagged_order_ids: tuple[str, ...]
+    duplicate: bool
+
+
+@dataclass(frozen=True)
+class OperationalCheckpoint:
+    inventory: dict[tuple[str, str], InventoryBalances]
+    shipments: dict[str, str]
+    orders: dict[str, OrderState]
+    blocked_positions: set[tuple[str, str]]
+    escalations: set[str]
+
+
 class ScenarioState:
     """Scenario-specific inventory/order state with a separate append-only audit."""
 
@@ -85,6 +100,8 @@ class ScenarioState:
         self._shipments = {shipment_id: status for shipment_id, (_, status)
                            in self._initial_shipments.items()}
         self._orders: dict[str, OrderState] = {}
+        self._blocked_positions: set[tuple[str, str]] = set()
+        self._escalations: set[str] = set()
         self._audit_events: list[AuditEvent] = []
         self._initial_snapshot = self.snapshot_bytes()
 
@@ -103,6 +120,14 @@ class ScenarioState:
     @property
     def audit_events(self) -> tuple[AuditEvent, ...]:
         return tuple(copy.deepcopy(self._audit_events))
+
+    @property
+    def blocked_positions(self) -> frozenset[tuple[str, str]]:
+        return frozenset(self._blocked_positions)
+
+    @property
+    def escalations(self) -> frozenset[str]:
+        return frozenset(self._escalations)
 
     def _audit(self, action: str, inputs: dict[str, str | int], result: str) -> None:
         sequence = len(self._audit_events) + 1
@@ -135,6 +160,8 @@ class ScenarioState:
         if type(quantity) is not int or quantity <= 0:
             raise ValueError("allocation quantity must be a positive integer")
         position = self._require_position(lot_id, location_id)
+        if (lot_id, location_id) in self._blocked_positions:
+            raise ValueError("fulfillment is blocked for inventory position")
         if self._lot_products[lot_id] != product_id:
             raise ValueError("lot does not belong to product")
         if position.available < quantity:
@@ -154,7 +181,7 @@ class ScenarioState:
         return copy.deepcopy(order)
 
     def place_hold(self, lot_id: str, location_id: str) -> HoldResult:
-        """Primitive used only after later policy approval; currently not API-wired."""
+        """Low-level primitive; agent actions must pass through the policy executor."""
         position = self._require_position(lot_id, location_id)
         moved = position.available
         position.available = 0
@@ -178,10 +205,60 @@ class ScenarioState:
         return HoldResult(moved, tuple(sorted(flagged_orders)),
                           tuple(sorted(exception_shipments)), duplicate)
 
+    def block_fulfillment(self, lot_id: str, location_id: str) -> BlockResult:
+        """Prevent new allocations and dispatch of existing allocations at a position."""
+        self._require_position(lot_id, location_id)
+        key = (lot_id, location_id)
+        duplicate = key in self._blocked_positions
+        self._blocked_positions.add(key)
+        flagged: list[str] = []
+        for order in self._orders.values():
+            if order.status == "allocated" and any(
+                allocation.lot_id == lot_id and allocation.location_id == location_id
+                for allocation in order.allocations
+            ):
+                order.status = "flagged"
+                flagged.append(order.order_id)
+        self._audit("block_fulfillment", {"lot_id": lot_id, "location_id": location_id},
+                    "duplicate" if duplicate else "blocked")
+        return BlockResult(tuple(sorted(flagged)), duplicate)
+
+    def escalate_incident(self, incident_key: str) -> None:
+        """Record an internal escalation; no public notice or external call is made."""
+        if not isinstance(incident_key, str) or not _IDENTIFIER.fullmatch(incident_key):
+            raise ValueError("incident key must be a structured identifier")
+        if incident_key in self._escalations:
+            raise ValueError("incident already escalated")
+        self._escalations.add(incident_key)
+        self._audit("escalate_incident", {"incident_key": incident_key}, "escalated")
+
+    def record_action_attempt(self, action: str, target_count: int, result: str) -> None:
+        """Audit a policy outcome without retaining untrusted evidence text."""
+        self._audit("action_attempt", {"action": action[:128], "target_count": target_count}, result)
+
+    def _checkpoint(self) -> OperationalCheckpoint:
+        return OperationalCheckpoint(
+            copy.deepcopy(self._inventory), self._shipments.copy(),
+            copy.deepcopy(self._orders), self._blocked_positions.copy(),
+            self._escalations.copy(),
+        )
+
+    def _rollback(self, checkpoint: OperationalCheckpoint) -> None:
+        """Compensate a failed batch while preserving its append-only audit trail."""
+        self._inventory = checkpoint.inventory
+        self._shipments = checkpoint.shipments
+        self._orders = checkpoint.orders
+        self._blocked_positions = checkpoint.blocked_positions
+        self._escalations = checkpoint.escalations
+        self._audit("rollback", {"scenario_id": self.scenario_id}, "restored")
+
     def dispatch_order(self, order_id: str) -> OrderState:
         """Simulate ordinary fulfillment, refusing orders flagged by a hold."""
         order = self._orders.get(order_id)
         if order is None or order.status != "allocated":
+            raise ValueError("order is not dispatchable")
+        if any((allocation.lot_id, allocation.location_id) in self._blocked_positions
+               for allocation in order.allocations):
             raise ValueError("order is not dispatchable")
         for allocation in order.allocations:
             if self._inventory[(allocation.lot_id, allocation.location_id)].allocated < allocation.quantity:
@@ -204,6 +281,8 @@ class ScenarioState:
             ],
             "shipments": dict(sorted(self._shipments.items())),
             "orders": [asdict(order) for _, order in sorted(self._orders.items())],
+            "blocked_positions": [list(key) for key in sorted(self._blocked_positions)],
+            "escalations": sorted(self._escalations),
         }
         return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
@@ -212,6 +291,8 @@ class ScenarioState:
         self._shipments = {shipment_id: status for shipment_id, (_, status)
                            in self._initial_shipments.items()}
         self._orders.clear()
+        self._blocked_positions.clear()
+        self._escalations.clear()
         if self.snapshot_bytes() != self._initial_snapshot:
             raise RuntimeError("reset failed to restore initial operational state")
         self._audit("reset", {"scenario_id": self.scenario_id}, "restored")
