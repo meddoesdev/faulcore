@@ -4,16 +4,24 @@ dist/
 .env.*
 !.env.example
 .env.local
+*.pem
+*.key
+secrets/
 .venv/
 venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+pytest-cache-files-*/
 .mypy_cache/
 .ruff_cache/
 .coverage
 htmlcov/
 coverage/
 *.log
+*.sqlite
+*.sqlite3
+logs/
+tmp/
 .DS_Store
 

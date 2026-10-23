@@ -37,6 +37,26 @@ The frontend uses deterministic mock data by default. Copy
 `frontend/.env.example` to `frontend/.env` and set `VITE_USE_MOCKS=false` when
 the backend API is available.
 
+## Backend groundwork
+
+The backend uses Python 3.11+ with FastAPI, Pydantic, NetworkX, Uvicorn, and
+pytest. Install the pinned local development dependencies with:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Run the currently available backend environment check with:
+
+```bash
+python -m pytest backend/tests
+```
+
+The backend package structure, FastAPI application shell, structured JSON
+error handling, and test harness are in place. Shared Pydantic and API response
+contracts remain pending coordinated review; no backend endpoints are
+implemented yet.
+
 ## Current status
 
 Phase 0 is complete on Person A's side: the frontend scaffold, typed API
