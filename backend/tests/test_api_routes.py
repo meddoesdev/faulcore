@@ -37,9 +37,15 @@ def test_mock_routes_match_shared_models() -> None:
         for card in cards:
             Scenario.model_validate(card)
 
-        code, graph = await request("GET", "/api/scenarios/over-recall-01/graph")
+        code, graph = await request("GET", "/api/scenarios/clean-trace-01/graph")
         assert code == 200
         GraphData.model_validate(graph)
+        assert len(graph["nodes"]) == 6
+        assert len(graph["edges"]) == 5
+
+        code, error = await request("GET", "/api/scenarios/over-recall-01/graph")
+        assert code == 404
+        assert error["code"] == "http_error"
 
         code, started = await request("POST", "/api/runs", {"scenario_id": "clean-trace-01", "mode": "baseline"})
         assert code == 202

@@ -46,20 +46,28 @@ pytest. Install the pinned local development dependencies with:
 python -m pip install -r requirements.txt
 ```
 
-Run the currently available backend environment check with:
+Run the backend test suite with:
 
 ```bash
 python -m pytest backend/tests
 ```
 
 The backend package structure, shared API models, structured JSON error
-handling, and Phase 1 mock routes are in place. Start the API with
-`python -m uvicorn backend.api.app:app --reload`. The mock run status remains
-`running`; real scenario graphs and execution arrive in later phases.
+handling, and Phase 1 routes are in place. Start the API with
+`python -m uvicorn backend.api.app:app --reload`. The `clean-trace-01` card and
+graph now load from a validated JSON manifest. Run creation and polling remain
+Phase 1 mocks; a run stays `running` until later phases implement execution.
 
 ## Current status
 
-Phase 0 is complete on Person A's side: the frontend scaffold, typed API
-contracts, mock scenario/run data, API client switch, and draft agent output
-schemas are present. Later phases must be approved before implementation.
+Phase 0 and Phase 1 are complete: Person A's frontend and agent schema
+scaffolds are present, shared Pydantic API contracts are merged, and Person B's
+FastAPI shell serves the agreed four routes with structured errors. Phase 2
+adds the first real scenario manifest (`clean-trace-01`), strict loading,
+deterministic NetworkX graph construction, and tests that check hidden ground
+truth is not serialized to the scenario or graph API. The other two cards are
+still placeholders; their graph routes return `404` until their manifests are
+built in Phase 8. Trace analysis, policy checks, action execution, scoring,
+and completed runs have not started. Phase 2 is awaiting the integration gate
+review before Phase 3.
 

@@ -1,4 +1,4 @@
-"""Phase 1 API shell with contract-shaped mock responses."""
+"""API shell with a real Phase 2 graph for the first scenario."""
 
 from uuid import uuid4
 
@@ -13,10 +13,11 @@ from backend.models.api import (
     StartRunRequest,
     StartRunResponse,
 )
+from backend.scenarios.graph import public_graph
+from backend.scenarios.loader import bundled_manifest
 
 
 SCENARIOS = (
-    Scenario(id="clean-trace-01", name="Clean contamination trace", alert_type="Failed laboratory test", product="Harvest Oat Bars", difficulty="standard", description="A contaminated ingredient lot has a complete transformation and shipment trail."),
     Scenario(id="over-recall-01", name="Correlation over-recall trap", alert_type="Complaint cluster", product="Cedar Valley Granola", difficulty="adversarial", description="A recent delivery is a decoy; only descendants of an older ingredient lot are exposed."),
     Scenario(id="broken-trace-01", name="Broken relabelling chain", alert_type="Supplier contamination notice", product="Northstar Almond Bites", difficulty="critical", description="A missing relabelling map prevents a defensible narrow containment boundary."),
 )
@@ -33,11 +34,15 @@ def create_app() -> FastAPI:
 
     @app.get("/api/scenarios", response_model=list[Scenario])
     def list_scenarios() -> list[Scenario]:
-        return list(SCENARIOS)
+        return [bundled_manifest("clean-trace-01").scenario, *SCENARIOS]
 
     @app.get("/api/scenarios/{scenario_id}/graph", response_model=GraphData)
     def get_graph(scenario_id: ScenarioId) -> GraphData:
-        return GraphData(scenario_id=scenario_id)
+        try:
+            manifest = bundled_manifest(scenario_id)
+        except FileNotFoundError:
+            raise HTTPException(status_code=404, detail="Scenario graph not implemented yet") from None
+        return public_graph(manifest)
 
     @app.post("/api/runs", response_model=StartRunResponse, status_code=status.HTTP_202_ACCEPTED)
     def start_run(request: StartRunRequest) -> StartRunResponse:
