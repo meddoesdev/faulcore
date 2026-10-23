@@ -5,7 +5,6 @@ import {
   Box,
   Check,
   ChevronRight,
-  CircleDashed,
   Clock3,
   MapPin,
   Network,
@@ -14,6 +13,7 @@ import {
   ShieldAlert,
 } from 'lucide-react'
 import { StatusPill } from '../components/StatusPill'
+import { ExposureGraph } from '../components/graph/ExposureGraph'
 import { useGraph } from '../hooks/useGraph'
 import type { GraphNode, Scenario } from '../types'
 
@@ -77,24 +77,11 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
         <section className="panel exposure-panel">
           <header className="panel-header">
             <div><span className="panel-index">01</span><div><h2>Exposure overview</h2><p>Supply-chain evidence snapshot</p></div></div>
-            <button className="panel-link" disabled>Open graph <ChevronRight size={15} /></button>
+            <span className="panel-hint">Select a node <ChevronRight size={15} /></span>
           </header>
 
           <div className="exposure-placeholder">
-            <div className="trace-line trace-line-a" />
-            <div className="trace-line trace-line-b" />
-            <div className="trace-line trace-line-c" />
-            {(graph.isPending ? [0, 1, 2, 3, 4, 5] : nodes.slice(0, 8)).map((node) => (
-              <div
-                className="trace-node"
-                data-exposure={typeof node === 'number' ? 'possible' : node.exposure}
-                key={typeof node === 'number' ? node : node.id}
-              >
-                <Box size={14} />
-                <span>{typeof node === 'number' ? 'Loading node' : node.label}</span>
-              </div>
-            ))}
-            <div className="graph-phase-label"><CircleDashed size={15} /> Interactive graph activates in Phase 2</div>
+            {graph.data ? <ExposureGraph graph={graph.data} /> : <div className="graph-loading">Preparing exposure topology…</div>}
           </div>
 
           <div className="exposure-legend">

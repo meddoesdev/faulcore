@@ -47,7 +47,12 @@ export function AppShell({ view, incidentLabel, onNavigate, children }: AppShell
             <Activity size={19} />
             <span>Command</span>
           </button>
-          <button className="rail-button" disabled aria-label="Trace explorer, available in Phase 2">
+          <button
+            className="rail-button"
+            disabled={!incidentLabel}
+            onClick={() => onNavigate('command')}
+            aria-label="Exposure trace graph"
+          >
             <ChevronsLeftRightEllipsis size={19} />
             <span>Trace</span>
           </button>
@@ -83,4 +88,3 @@ export function AppShell({ view, incidentLabel, onNavigate, children }: AppShell
     </div>
   )
 }
-
