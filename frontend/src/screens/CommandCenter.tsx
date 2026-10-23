@@ -9,14 +9,18 @@ import {
   MapPin,
   Network,
   PackageCheck,
+  Play,
   Route,
   ShieldAlert,
 } from 'lucide-react'
+import { useState } from 'react'
 import { StatusPill } from '../components/StatusPill'
 import { ExposureGraph } from '../components/graph/ExposureGraph'
 import { ReviewWorkspace } from '../components/review/ReviewWorkspace'
+import { VerificationPanel } from '../components/verification/VerificationPanel'
 import { useGraph } from '../hooks/useGraph'
-import type { GraphNode, Scenario } from '../types'
+import { useRunController } from '../hooks/useRunController'
+import type { GraphNode, RunMode, Scenario } from '../types'
 
 interface CommandCenterProps {
   scenario: Scenario
@@ -28,10 +32,16 @@ function exposureCount(nodes: GraphNode[], exposure: GraphNode['exposure']) {
 }
 
 export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
+  const [mode, setMode] = useState<RunMode>('faultcore')
   const graph = useGraph(scenario.id)
+  const runController = useRunController(scenario.id, mode)
+  const run = runController.run
   const nodes = graph.data?.nodes ?? []
   const exposedNodes = nodes.filter((node) => node.exposure !== 'excluded')
   const isBrokenTrace = scenario.id === 'broken-trace-01'
+  const isRunActive = runController.isStarting || run?.status === 'running'
+  const hasStage = (stage: 'investigation' | 'review' | 'arbitration' | 'policy') => run?.events.some((event) => event.stage === stage) ?? false
+  const runLabel = runController.isStarting ? 'Starting…' : run?.status === 'running' ? 'Run in progress' : run?.status === 'completed' ? 'Run again' : 'Run containment'
 
   return (
     <div className="screen-stack command-center">
@@ -44,8 +54,11 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
         </div>
         <div className="command-actions">
           <button className="secondary-button">View source data <ArrowUpRight size={15} /></button>
-          <button className="primary-button" disabled>Run containment</button>
-          <span className="phase-note">Enabled in Phase 4</span>
+          <div className="mode-toggle" aria-label="Run mode">
+            <button data-active={mode === 'faultcore'} disabled={isRunActive} onClick={() => setMode('faultcore')}>FaultCore</button>
+            <button data-active={mode === 'baseline'} disabled={isRunActive} onClick={() => setMode('baseline')}>Baseline</button>
+          </div>
+          <button className="primary-button run-button" disabled={isRunActive} onClick={runController.start}><Play size={14} /> {runLabel}</button>
         </div>
       </section>
 
@@ -68,8 +81,8 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
       <section className="status-strip" aria-label="Incident status">
         <div><span className="status-icon"><Route size={16} /></span><span>Trace state</span><strong>{graph.isPending ? 'Loading' : 'Evidence loaded'}</strong></div>
         <div><span className="status-icon"><Network size={16} /></span><span>Exposure nodes</span><strong>{graph.data ? exposedNodes.length.toString().padStart(2, '0') : '—'}</strong></div>
-        <div><span className="status-icon"><Clock3 size={16} /></span><span>Response clock</span><strong>00:00:00</strong></div>
-        <div><span className="status-icon"><ShieldAlert size={16} /></span><span>Containment</span><strong>{isBrokenTrace ? 'Review needed' : 'Not started'}</strong></div>
+        <div><span className="status-icon"><Clock3 size={16} /></span><span>Run mode</span><strong>{mode === 'faultcore' ? 'FaultCore agents' : 'Single-agent baseline'}</strong></div>
+        <div><span className="status-icon"><ShieldAlert size={16} /></span><span>Containment</span><strong>{runController.error ? 'Run error' : run?.status === 'completed' ? 'Verified' : run?.status === 'running' || runController.isStarting ? 'In progress' : isBrokenTrace ? 'Review needed' : 'Not started'}</strong></div>
       </section>
 
       {graph.isError && <div className="error-panel" role="alert"><AlertTriangle size={20} /><div><strong>Graph fixture unavailable</strong><p>{graph.error.message}</p></div></div>}
@@ -116,9 +129,9 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
           </header>
           <ol className="progress-list">
             <li data-state="complete"><span><Check size={13} /></span><div><strong>Alert ingested</strong><small>Scenario evidence available</small></div></li>
-            <li data-state="active"><span>2</span><div><strong>Trace investigation</strong><small>Ready to initialise</small></div></li>
-            <li data-state="pending"><span>3</span><div><strong>Independent review</strong><small>Waiting for investigation</small></div></li>
-            <li data-state="pending"><span>4</span><div><strong>Arbitration + policy</strong><small>Waiting for assessments</small></div></li>
+            <li data-state={hasStage('investigation') ? 'complete' : isRunActive ? 'active' : 'pending'}><span>{hasStage('investigation') ? <Check size={13} /> : '2'}</span><div><strong>Trace investigation</strong><small>{hasStage('investigation') ? 'Assessment committed' : isRunActive ? 'Reconstructing scope' : 'Ready to initialise'}</small></div></li>
+            <li data-state={mode === 'baseline' ? (hasStage('investigation') ? 'complete' : 'pending') : hasStage('review') ? 'complete' : hasStage('investigation') ? 'active' : 'pending'}><span>{mode === 'baseline' || hasStage('review') ? <Check size={13} /> : '3'}</span><div><strong>Independent review</strong><small>{mode === 'baseline' ? 'Bypassed in baseline mode' : hasStage('review') ? 'Blind review committed' : 'Waiting for investigation'}</small></div></li>
+            <li data-state={hasStage('policy') || run?.status === 'completed' ? 'complete' : hasStage('arbitration') || (mode === 'baseline' && hasStage('investigation')) ? 'active' : 'pending'}><span>{hasStage('policy') || run?.status === 'completed' ? <Check size={13} /> : '4'}</span><div><strong>Arbitration + policy</strong><small>{run?.status === 'completed' ? 'Policy checks complete' : mode === 'baseline' ? 'Arbiter bypassed; policy remains' : hasStage('arbitration') ? 'Resolving against policy' : 'Waiting for assessments'}</small></div></li>
           </ol>
         </section>
 
@@ -138,7 +151,8 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
         </section>
       </div>
 
-      <ReviewWorkspace scenarioId={scenario.id} />
+      <ReviewWorkspace run={run} isLoading={runController.isStarting || runController.isPolling} error={runController.error} onReplay={runController.start} />
+      <VerificationPanel run={run} />
     </div>
   )
 }

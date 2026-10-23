@@ -20,7 +20,13 @@ const graphs = new Map<ScenarioId, GraphData>(
   }),
 )
 const fixtures = runsJson as unknown as Run[]
-const startedRuns = new Map<string, Run>()
+interface StartedRun {
+  fixture: Run
+  startedAt: number
+}
+
+const startedRuns = new Map<string, StartedRun>()
+const mockEventIntervalMs = 620
 
 const copy = <T>(value: T): T => structuredClone(value)
 
@@ -41,14 +47,44 @@ export async function startMockRun(request: StartRunRequest): Promise<StartRunRe
   if (!fixture) throw new Error(`No mock run found for ${request.scenario_id}/${request.mode}`)
 
   const runId = `mock-${request.scenario_id}-${request.mode}-${Date.now()}`
-  startedRuns.set(runId, { ...copy(fixture), run_id: runId })
+  startedRuns.set(runId, {
+    fixture: { ...copy(fixture), run_id: runId },
+    startedAt: Date.now(),
+  })
   return { run_id: runId, status: 'running' }
 }
 
 export async function getMockRun(runId: string): Promise<Run> {
-  const run = startedRuns.get(runId) ?? fixtures.find((fixture) => fixture.run_id === runId)
-  if (!run) throw new Error(`No mock run found for ${runId}`)
-  return copy(run)
+  const started = startedRuns.get(runId)
+  if (!started) {
+    const fixture = fixtures.find((candidate) => candidate.run_id === runId)
+    if (!fixture) throw new Error(`No mock run found for ${runId}`)
+    return copy(fixture)
+  }
+
+  const { fixture, startedAt } = started
+  const visibleCount = Math.min(
+    fixture.events.length,
+    Math.max(1, Math.floor((Date.now() - startedAt) / mockEventIntervalMs) + 1),
+  )
+  const events = fixture.events.slice(0, visibleCount)
+  const completed = visibleCount === fixture.events.length
+  const hasStage = (...stages: Run['events'][number]['stage'][]) =>
+    events.some((event) => stages.includes(event.stage))
+
+  return copy({
+    ...fixture,
+    status: completed ? fixture.status : 'running',
+    events,
+    investigator: hasStage('investigation') ? fixture.investigator : null,
+    reviewer: hasStage('review') ? fixture.reviewer : null,
+    arbiter: hasStage('arbitration') ? fixture.arbiter : null,
+    policy_checks: completed || hasStage('policy', 'action', 'verification') ? fixture.policy_checks : [],
+    actions: completed || hasStage('action', 'verification') ? fixture.actions : [],
+    verification: completed ? fixture.verification : null,
+    metrics: completed ? fixture.metrics : null,
+    error: completed ? fixture.error : null,
+  })
 }
 
 export const mockFixtureCount = {
