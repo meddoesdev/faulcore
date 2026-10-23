@@ -2,11 +2,10 @@
 
 `schemas.py` contains strict contracts for model-generated agent output only.
 
-Before integration, Person B should review whether these cross-boundary contracts
-belong in `backend/models`:
+The reviewed HTTP boundary now lives in `backend/models/api.py`. Agent outputs
+must be explicitly mapped into its `AgentAssessment` and `ArbiterDecision`
+models before they are exposed by `GET /api/runs/{run_id}`.
 
-- identifiers and evidence references;
-- the normalized agent assessment exposed by `GET /api/runs/{run_id}`;
-- arbiter decision values (`accept`, `correct`, `broaden`, `escalate`).
-
-No shared or Person B-owned files are created or changed in Phase 0.
+Keeping these layers separate preserves prompt-specific fields such as
+contradictions and alternative explanations without silently expanding the
+shared API response.
