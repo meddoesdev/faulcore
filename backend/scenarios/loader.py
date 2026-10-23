@@ -113,7 +113,8 @@ class ScenarioManifest(ManifestModel):
         transformations = unique(self.transformations, "transformation")
         shipments = unique(self.shipments, "shipment")
         evidence = unique([self.initial_alert, *self.decoy_evidence], "evidence")
-        all_ids = [*facilities, *products, *lots, *transformations, *shipments, *evidence]
+        all_ids = [*facilities, *products, *lots, *transformations, *shipments, *evidence,
+                   *self.missing_or_corrupted_records]
         if len(all_ids) != len(set(all_ids)):
             raise ValueError("manifest identifiers must be globally unique")
         if not all(lot.product_id in products and lot.origin_facility_id in facilities
@@ -164,9 +165,9 @@ def load_manifest(path: Path) -> ScenarioManifest:
 
 
 def bundled_manifest(scenario_id: str) -> ScenarioManifest:
-    if scenario_id != "clean-trace-01":
+    if scenario_id not in {"clean-trace-01", "over-recall-01", "broken-trace-01"}:
         raise FileNotFoundError(f"scenario {scenario_id} is not implemented")
-    return load_manifest(Path(__file__).with_name("clean-trace-01.json"))
+    return load_manifest(Path(__file__).with_name(f"{scenario_id}.json"))
 
 
 def operational_digest(manifest: ScenarioManifest) -> str:
