@@ -1,0 +1,11 @@
+# Replace or extend these entries when Person B's GitHub username is known.
+/frontend/ @meddoesdev
+/backend/agents/ @meddoesdev
+
+# Shared contracts currently request review from the known repository owner.
+# Add Person B here before shared-model changes are merged.
+/backend/models/ @meddoesdev
+/README.md @meddoesdev
+/AGENTS.md @meddoesdev
+/.github/CODEOWNERS @meddoesdev
+
