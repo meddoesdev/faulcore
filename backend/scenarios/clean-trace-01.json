@@ -1,0 +1,54 @@
+{
+  "scenario": {
+    "id": "clean-trace-01",
+    "name": "Clean contamination trace",
+    "alert_type": "Failed laboratory test",
+    "product": "Harvest Oat Bars",
+    "difficulty": "standard",
+    "description": "A contaminated ingredient lot has a complete transformation and shipment trail."
+  },
+  "seed": 1042,
+  "topology": [
+    {"id": "SUP-ATLAS", "type": "supplier", "name": "Atlas Ingredients"},
+    {"id": "PLANT-A", "type": "processing_plant", "name": "Plant A"},
+    {"id": "DC-EAST", "type": "distribution_center", "name": "East Distribution Centre"},
+    {"id": "STORE-014", "type": "store", "name": "Store 014"}
+  ],
+  "products": [
+    {"id": "ING-OATS", "name": "Rolled oats", "kind": "ingredient"},
+    {"id": "PROD-BARS", "name": "Harvest Oat Bars", "kind": "finished"}
+  ],
+  "lots": [
+    {"id": "ING-1042", "product_id": "ING-OATS", "kind": "ingredient", "quantity": 1200, "origin_facility_id": "SUP-ATLAS"},
+    {"id": "LOT-A71", "product_id": "PROD-BARS", "kind": "finished", "quantity": 420, "origin_facility_id": "PLANT-A"},
+    {"id": "LOT-A72", "product_id": "PROD-BARS", "kind": "finished", "quantity": 380, "origin_facility_id": "PLANT-A"}
+  ],
+  "transformations": [
+    {"id": "TX-210", "facility_id": "PLANT-A", "timestamp": "2026-10-21T08:00:00Z", "inputs": [{"lot_id": "ING-1042", "quantity": 1200}], "outputs": [{"lot_id": "LOT-A71", "quantity": 420}, {"lot_id": "LOT-A72", "quantity": 380}]}
+  ],
+  "shipments": [
+    {"id": "SHIP-701", "lot_id": "LOT-A71", "from_facility_id": "PLANT-A", "to_facility_id": "DC-EAST", "quantity": 420, "status": "received", "timestamp": "2026-10-21T14:00:00Z"},
+    {"id": "SHIP-702", "lot_id": "LOT-A72", "from_facility_id": "PLANT-A", "to_facility_id": "STORE-014", "quantity": 380, "status": "received", "timestamp": "2026-10-21T16:00:00Z"}
+  ],
+  "inventory": [
+    {"lot_id": "LOT-A71", "location_id": "DC-EAST", "quantity": 420, "status": "available"},
+    {"lot_id": "LOT-A72", "location_id": "STORE-014", "quantity": 380, "status": "available"}
+  ],
+  "initial_alert": {"id": "ALERT-001", "kind": "failed_lab_test", "text": "Atlas Ingredients reports a failed pathogen screen for ING-1042."},
+  "decoy_evidence": [],
+  "missing_or_corrupted_records": [],
+  "permitted_actions": ["run_trace_diagnostics", "place_inventory_hold", "block_fulfillment", "escalate_incident"],
+  "action_consequences": {
+    "run_trace_diagnostics": "Expose the complete ingredient-to-finished-lot trail without changing inventory.",
+    "place_inventory_hold": "Mark matching available inventory positions held.",
+    "block_fulfillment": "Prevent new allocations from affected finished lots.",
+    "escalate_incident": "Record a structured human-review escalation."
+  },
+  "verification_criteria": ["Both descendant finished lots are held at their current locations.", "No affected finished lot remains allocatable."],
+  "ground_truth": {
+    "affected_lot_ids": ["LOT-A71", "LOT-A72"],
+    "affected_units": 800,
+    "correct_containment_scope": ["LOT-A71@DC-EAST", "LOT-A72@STORE-014"],
+    "expected_outcome": "Both affected finished lots held; no safe inventory held."
+  }
+}
