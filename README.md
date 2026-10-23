@@ -52,10 +52,10 @@ Run the currently available backend environment check with:
 python -m pytest backend/tests
 ```
 
-The backend package structure, FastAPI application shell, structured JSON
-error handling, and test harness are in place. Shared Pydantic and API response
-contracts remain pending coordinated review; no backend endpoints are
-implemented yet.
+The backend package structure, shared API models, structured JSON error
+handling, and Phase 1 mock routes are in place. Start the API with
+`python -m uvicorn backend.api.app:app --reload`. The mock run status remains
+`running`; real scenario graphs and execution arrive in later phases.
 
 ## Current status
 
