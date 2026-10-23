@@ -1,0 +1,27 @@
+[
+  {
+    "id": "clean-trace-01",
+    "name": "Clean contamination trace",
+    "alert_type": "Failed laboratory test",
+    "product": "Harvest Oat Bars",
+    "difficulty": "standard",
+    "description": "A contaminated ingredient lot has a complete transformation and shipment trail."
+  },
+  {
+    "id": "over-recall-01",
+    "name": "Correlation over-recall trap",
+    "alert_type": "Complaint cluster",
+    "product": "Cedar Valley Granola",
+    "difficulty": "adversarial",
+    "description": "A recent delivery is a decoy; only descendants of an older ingredient lot are exposed."
+  },
+  {
+    "id": "broken-trace-01",
+    "name": "Broken relabelling chain",
+    "alert_type": "Supplier contamination notice",
+    "product": "Northstar Almond Bites",
+    "difficulty": "critical",
+    "description": "A missing relabelling map prevents a defensible narrow containment boundary."
+  }
+]
+

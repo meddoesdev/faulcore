@@ -1,0 +1,19 @@
+{
+  "scenario_id": "clean-trace-01",
+  "nodes": [
+    {"id":"ING-1042","type":"supplier_lot","label":"Ingredient ING-1042","exposure":"confirmed","metadata":{"supplier":"Atlas Ingredients","units":1200}},
+    {"id":"TX-210","type":"transformation","label":"Batch transformation TX-210","exposure":"confirmed","metadata":{"facility":"Plant A"}},
+    {"id":"LOT-A71","type":"facility","label":"Finished lot A-71","exposure":"confirmed","inventory_state":"held","metadata":{"units":420}},
+    {"id":"LOT-A72","type":"facility","label":"Finished lot A-72","exposure":"confirmed","inventory_state":"held","metadata":{"units":380}},
+    {"id":"DC-EAST","type":"distribution_center","label":"East Distribution Centre","exposure":"confirmed","inventory_state":"held","metadata":{"units":500}},
+    {"id":"STORE-014","type":"store","label":"Store 014","exposure":"confirmed","inventory_state":"held","metadata":{"units":300}}
+  ],
+  "edges": [
+    {"id":"e1","source":"ING-1042","target":"TX-210","exposure":"confirmed","label":"consumed by"},
+    {"id":"e2","source":"TX-210","target":"LOT-A71","exposure":"confirmed"},
+    {"id":"e3","source":"TX-210","target":"LOT-A72","exposure":"confirmed"},
+    {"id":"e4","source":"LOT-A71","target":"DC-EAST","exposure":"confirmed","label":"shipment"},
+    {"id":"e5","source":"LOT-A72","target":"STORE-014","exposure":"confirmed","label":"shipment"}
+  ]
+}
+
