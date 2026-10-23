@@ -110,15 +110,19 @@ class ScenarioManifest(ManifestModel):
         lots = unique(self.lots, "lot")
         transformations = unique(self.transformations, "transformation")
         shipments = unique(self.shipments, "shipment")
-        all_node_ids = [*facilities, *lots, *transformations]
-        if len(all_node_ids) != len(set(all_node_ids)):
-            raise ValueError("graph node identifiers must be globally unique")
+        evidence = unique([self.initial_alert, *self.decoy_evidence], "evidence")
+        all_ids = [*facilities, *products, *lots, *transformations, *shipments, *evidence]
+        if len(all_ids) != len(set(all_ids)):
+            raise ValueError("manifest identifiers must be globally unique")
         if not all(lot.product_id in products and lot.origin_facility_id in facilities
                    and lot.kind == products[lot.product_id].kind for lot in self.lots):
             raise ValueError("lot references unknown or mismatched product/facility")
         for event in self.transformations:
             if event.facility_id not in facilities:
                 raise ValueError("transformation references unknown facility")
+            if (len({item.lot_id for item in event.inputs}) != len(event.inputs)
+                    or len({item.lot_id for item in event.outputs}) != len(event.outputs)):
+                raise ValueError("duplicate lot reference within transformation")
             for item in [*event.inputs, *event.outputs]:
                 if item.lot_id not in lots or item.quantity > lots[item.lot_id].quantity:
                     raise ValueError("transformation references unknown lot or excessive quantity")

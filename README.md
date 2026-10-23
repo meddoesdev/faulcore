@@ -67,7 +67,10 @@ adds the first real scenario manifest (`clean-trace-01`), strict loading,
 deterministic NetworkX graph construction, and tests that check hidden ground
 truth is not serialized to the scenario or graph API. The other two cards are
 still placeholders; their graph routes return `404` until their manifests are
-built in Phase 8. Trace analysis, policy checks, action execution, scoring,
-and completed runs have not started. Phase 2 is awaiting the integration gate
-review before Phase 3.
+built in Phase 8. Policy checks, action execution, scoring, and completed runs
+have not started. Phase 3 adds six read-only deterministic
+trace tools for backward/forward traversal, descendant lots, inventory lookup,
+quantity reconciliation, and traceability-gap detection. The tools retain no
+hidden ground truth and are not yet wired to agents or actions. Phase 3 is
+awaiting its review gate before simulated state and mutations begin.
 
