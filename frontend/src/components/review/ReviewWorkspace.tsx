@@ -25,6 +25,32 @@ const stageProgress: Record<RunEvent['stage'], number> = {
   policy: 0.78, action: 0.9, verification: 1,
 }
 
+function failureCopy(message: string) {
+  const normalized = message.toLowerCase()
+  if (normalized.includes('invalid') || normalized.includes('schema') || normalized.includes('malformed')) {
+    return {
+      title: 'Model output rejected safely',
+      guidance: 'The response did not satisfy the required contract after repair. No containment action was accepted.',
+    }
+  }
+  if (normalized.includes('provider') || normalized.includes('api key') || normalized.includes('configured')) {
+    return {
+      title: 'Reasoning provider unavailable',
+      guidance: 'Check provider credentials, or restart the backend with LLM_PROVIDER=mock for an explicit offline demo.',
+    }
+  }
+  if (normalized.includes('unavailable') || normalized.includes('network')) {
+    return {
+      title: 'Backend connection lost',
+      guidance: 'The run remains unverified. Restore the live API connection before retrying.',
+    }
+  }
+  return {
+    title: 'Agent run stopped safely',
+    guidance: 'No containment decision was accepted. Check provider availability and structured output, then retry.',
+  }
+}
+
 export function ReviewWorkspace({ run, isLoading, error, onReplay }: ReviewWorkspaceProps) {
   const baseline = run?.mode === 'baseline'
   const hasStage = (stage: RunEvent['stage']) => run?.events.some((event) => event.stage === stage) ?? false
@@ -51,7 +77,9 @@ export function ReviewWorkspace({ run, isLoading, error, onReplay }: ReviewWorks
   }
 
   if (error || run?.status === 'failed') {
-    return <section className="review-workspace error-workspace"><AlertOctagon size={22} /><div><strong>Run could not be completed</strong><p>{error?.message ?? run?.error ?? 'The workflow returned a failed state.'}</p></div><button className="secondary-button" onClick={onReplay}><RotateCcw size={14} /> Try again</button></section>
+    const message = error?.message ?? run?.error ?? 'The workflow returned a failed state.'
+    const copy = failureCopy(message)
+    return <section className="review-workspace error-workspace" role="alert" aria-live="assertive"><AlertOctagon size={22} /><div><strong>{copy.title}</strong><p>{message}</p><small>{copy.guidance}</small></div><button className="secondary-button" onClick={onReplay}><RotateCcw size={14} /> Try again</button></section>
   }
 
   if (!run) {

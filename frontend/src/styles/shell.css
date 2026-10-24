@@ -11,10 +11,18 @@
 .rs-nav-button:disabled { opacity: .4; cursor: not-allowed; }
 .rs-topbar-status { display: flex; align-items: center; gap: 10px; color: var(--rs-ink-muted); font-size: 13px; white-space: nowrap; }
 .rs-topbar-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--rs-safe); box-shadow: 0 0 0 4px var(--rs-safe-soft); }
+.rs-topbar-status[data-state="mock"] i { background: var(--rs-possible); box-shadow: 0 0 0 4px var(--rs-possible-soft); }
+.rs-topbar-status[data-state="checking"] i { background: var(--rs-ink-faint); box-shadow: 0 0 0 4px var(--rs-surface-sunk); }
+.rs-topbar-status[data-state="unavailable"] { color: var(--rs-affected); }
+.rs-topbar-status[data-state="unavailable"] i { background: var(--rs-affected); box-shadow: 0 0 0 4px var(--rs-affected-soft); }
 .rs-context { min-height: 44px; border-bottom: 1px solid var(--rs-line); background: var(--rs-surface); }
 .rs-context-inner { width: min(1500px, 100%); min-height: 44px; margin: 0 auto; padding: 0 clamp(20px, 3vw, 48px); display: flex; align-items: center; justify-content: space-between; gap: 20px; color: var(--rs-ink-muted); font-size: 12px; }
 .rs-context strong { color: var(--rs-ink); font-family: var(--rs-font-mono); font-weight: 550; }
 .rs-context span:last-child { max-width: 54ch; text-align: right; }
+.rs-connection-banner, .rs-demo-banner { min-height: 46px; padding: 10px clamp(20px, 3vw, 48px); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; text-align: center; }
+.rs-connection-banner { color: #7a2923; border-bottom: 1px solid #e1aaa5; background: var(--rs-affected-soft); }
+.rs-demo-banner { color: #6e4c0f; border-bottom: 1px solid #e8c781; background: var(--rs-possible-soft); }
+.rs-connection-banner span, .rs-demo-banner span { color: inherit; opacity: .82; }
 .rs-main { flex: 1; }
 .rs-workspace { width: min(1500px, 100%); margin: 0 auto; padding: 0 clamp(20px, 3vw, 48px) 72px; }
 .rs-trust-footer { margin-top: auto; border-top: 1px solid var(--rs-line); background: var(--rs-surface); }
@@ -33,7 +41,8 @@
 
 @media (max-width: 560px) {
   .rs-topbar-inner { padding-top: 14px; }
-  .rs-topbar-status span { display: none; }
+  .rs-topbar-status { gap: 7px; font-size: 10px; }
+  .rs-topbar-status i { width: 7px; height: 7px; }
   .rs-nav-button { flex: 0 0 auto; }
   .rs-context { display: none; }
   .rs-workspace { padding-inline: 15px; }

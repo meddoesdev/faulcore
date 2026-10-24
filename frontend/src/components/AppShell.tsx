@@ -6,16 +6,18 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import type { PropsWithChildren } from 'react'
+import type { ApiConnection } from '../hooks/useApiConnection'
 
 type AppView = 'incidents' | 'command'
 
 interface AppShellProps extends PropsWithChildren {
   view: AppView
   incidentLabel?: string
+  connection: ApiConnection
   onNavigate: (view: AppView) => void
 }
 
-export function AppShell({ view, incidentLabel, onNavigate, children }: AppShellProps) {
+export function AppShell({ view, incidentLabel, connection, onNavigate, children }: AppShellProps) {
   const navigateTo = (target: 'command' | 'graph' | 'verification') => {
     onNavigate('command')
     if (target === 'graph') document.querySelector('.exposure-panel')?.scrollIntoView({ behavior: 'smooth' })
@@ -34,10 +36,12 @@ export function AppShell({ view, incidentLabel, onNavigate, children }: AppShell
             <button className="rs-nav-button" disabled={!incidentLabel} onClick={() => navigateTo('graph')}><GitBranch size={16} />Exposure</button>
             <button className="rs-nav-button" disabled={!incidentLabel} onClick={() => navigateTo('verification')}><ListChecks size={16} />Verification</button>
           </nav>
-          <div className="rs-topbar-status" aria-label="Simulation environment online"><i /><span>Simulation online</span></div>
+          <div className="rs-topbar-status" data-state={connection.state} aria-label={connection.label} title={connection.detail}><i /><span>{connection.label}</span></div>
         </div>
       </header>
       <div className="rs-context"><div className="rs-context-inner"><strong>{incidentLabel ?? 'No incident selected'}</strong><span>Evidence defines scope. Policy defines authority.</span></div></div>
+      {connection.state === 'unavailable' && <div className="rs-connection-banner" role="alert"><strong>Live API unavailable.</strong><span>{connection.detail}</span></div>}
+      {connection.state === 'mock' && <div className="rs-demo-banner" role="status"><strong>Demo mode.</strong><span>Runs use deterministic local fixtures and do not contact the backend.</span></div>}
       <main className="rs-main" id="main-content"><div className="rs-workspace">{children}</div></main>
       <footer className="rs-trust-footer"><div><strong><ShieldCheck size={17} /> Every action logged. Every decision traceable.</strong><p>Public notices, disposal, and release require human authorization.</p></div></footer>
     </div>

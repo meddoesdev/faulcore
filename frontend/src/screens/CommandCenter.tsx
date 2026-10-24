@@ -93,7 +93,7 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
         <div><span className="status-icon"><ShieldAlert size={16} /></span><span>Containment</span><strong>{runController.error ? 'Run error' : run?.status === 'completed' ? 'Verified' : run?.status === 'running' || runController.isStarting ? 'In progress' : isBrokenTrace ? 'Review needed' : 'Not started'}</strong></div>
       </section>
 
-      {graph.isError && <div className="error-panel" role="alert"><AlertTriangle size={20} /><div><strong>Graph fixture unavailable</strong><p>{graph.error.message}</p></div></div>}
+      {graph.isError && <div className="error-panel" role="alert"><AlertTriangle size={20} /><div><strong>Exposure graph unavailable</strong><p>{graph.error.message}</p></div></div>}
 
       <div className="command-grid">
         <section className="panel exposure-panel">
