@@ -1,96 +1,383 @@
-# FaultCore RecallScope
+# arivu.ai
 
-FaultCore RecallScope is a multi-agent product-containment prototype for
-supply-chain incidents. It compares an Investigator's proposed recall scope
-with an independently produced Reviewer scope, resolves disagreements through
-an Arbiter, and submits the result to deterministic policy controls before any
-simulated containment action.
+arivu.ai is a policy-gated, multi-agent incident-containment system for supply-chain traceability events. It turns an alert and recorded trace data into a defensible containment decision, checks that decision against deterministic safety controls, applies approved actions to an isolated simulator, and verifies the outcome against private evaluation data.
+
+The project also includes a single-agent baseline so the multi-agent result can be compared on containment precision, recall, safe inventory preservation, and response time.
+
+> **Naming note:** `arivu.ai` is the product name shown in the interface. The value `faultcore` remains in the API and internal types as the stable identifier for the multi-agent run mode. Changing it would break the shared frontend/backend contract.
+
+## What the system does
+
+- Visualizes product movement from ingredient lots through transformations, facilities, distribution centres, stores, inventory, and orders.
+- Runs an evidence-based Investigator assessment.
+- Runs an independent Reviewer assessment without exposing the Investigator's answer.
+- Uses an Arbiter to resolve disagreements and commit the final lot scope.
+- Allows at most one correction cycle when the Arbiter requests it.
+- Applies a deterministic, fail-closed policy before any simulated action.
+- Executes only approved containment actions inside fresh, per-run simulator state.
+- Verifies the result using private ground truth that agents and policy code cannot access.
+- Compares the multi-agent workflow with a single-agent baseline using the same policy and scoring rules.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    U[Operator] --> UI[React + TypeScript UI]
+    UI -->|GET scenarios and graphs| API[FastAPI]
+    UI -->|POST run / poll status| API
+
+    subgraph Runtime[Per-run orchestration]
+        API --> RC[Run Coordinator]
+        RC --> SM[Validated Scenario Manifest]
+        SM --> TT[Read-only Trace Tools]
+        TT --> AW[Agent Workflow]
+
+        subgraph Agents[Context-isolated reasoning]
+            AW --> I[Investigator]
+            AW --> R[Independent Reviewer]
+            I --> A[Arbiter]
+            R --> A
+            A -. one correction maximum .-> I
+        end
+
+        A --> SCOPE[Committed Lot Scope]
+        SCOPE --> PE[Deterministic Policy Engine]
+        PE -->|approved| EX[Action Executor]
+        PE -->|rejected or escalation required| ES[Internal Escalation]
+        EX --> SS[Isolated Simulator State]
+        ES --> SS
+    end
+
+    SS --> V[Private Verification + Scoring]
+    GT[(Hidden Ground Truth)] --> V
+    V --> RC
+    RC --> API
+    API --> UI
+
+    LLM[Groq / Gemini / OpenRouter / Mock] --> AW
+
+    classDef private fill:#f4e8ff,stroke:#7651a8,color:#24152f;
+    classDef control fill:#e8f7f2,stroke:#0d8b75,color:#0a4138;
+    class GT,V private;
+    class PE,EX control;
+```
+
+### Trust boundaries
+
+1. **Agents see operational evidence only.** They never receive hidden ground truth.
+2. **Reviewer isolation is enforced by application state.** The Reviewer payload is rebuilt from the immutable incident and raw trace; it does not include the Investigator output.
+3. **The Arbiter decides scope but cannot execute actions.** Its structured lot IDs are expanded only through trusted manifest inventory.
+4. **Policy is deterministic.** Model text cannot grant approval, create trace links, or bypass a failed check.
+5. **Verification is private.** Only the scoring layer reads ground truth, after action execution.
+
+## End-to-end process
+
+1. **Incident selection** — the frontend requests the three canonical scenarios from `GET /api/scenarios`.
+2. **Trace loading** — the selected scenario's validated public graph is returned by `GET /api/scenarios/{scenario_id}/graph`.
+3. **Run creation** — the frontend posts the scenario and mode to `POST /api/runs`. The API returns a run ID immediately.
+4. **Evidence collection** — read-only trace tools reconstruct recorded parents, descendants, transformations, shipments, inventory, orders, and declared gaps.
+5. **Agent analysis** — in `faultcore` mode, the Investigator and blind Reviewer independently produce typed assessments. The Arbiter receives both committed outputs and selects, broadens, corrects, or escalates the scope. In `baseline` mode, one agent produces the assessment.
+6. **Scope validation** — final lot IDs must be unique, known, and backed by recorded inventory positions. Unknown or empty scopes fail closed.
+7. **Policy evaluation** — every proposed action passes through all deterministic checks. No individual pass can override a failure.
+8. **Action execution** — approved holds and fulfilment blocks mutate only the in-memory simulator. Escalation remains non-mutating.
+9. **Verification** — the private scorer checks contained affected units, missed units, safe inventory impact, dispatchable orders, and in-transit shipment exceptions.
+10. **Result streaming** — the frontend polls `GET /api/runs/{run_id}` and progressively displays events, assessments, policy checks, actions, verification, and metrics.
+
+## Agent roles
+
+| Role | Responsibility | Context received |
+| --- | --- | --- |
+| Investigator | Proposes affected, possible, and excluded lots with evidence and confidence | Incident, untrusted evidence, deterministic trace |
+| Reviewer | Produces an independent assessment | Incident and deterministic trace only |
+| Arbiter | Resolves disagreement and commits the final scope | Trace plus committed Investigator and Reviewer outputs |
+| Baseline | Provides a single-agent comparison result | Incident, untrusted evidence, deterministic trace |
+
+All model outputs are validated against strict Pydantic schemas. Invalid output receives one structured repair attempt; a second invalid response fails the run. If a provider is unavailable, the entire reasoning attempt is discarded before the workflow moves to the next provider.
+
+## Deterministic policy controls
+
+Every action is evaluated against:
+
+- action allowlist;
+- prohibited behaviour;
+- structured and matching lot, location, and product identifiers;
+- recorded evidence paths;
+- scope and target-count limits;
+- human approval requirements for large or multi-region scopes;
+- declared traceability gaps;
+- duplicate-action protection; and
+- the single correction-cycle limit.
+
+The only permitted action types are:
+
+- `run_trace_diagnostics`
+- `place_inventory_hold`
+- `block_fulfillment`
+- `escalate_incident`
+
+Publishing recall notices, disposing inventory, releasing holds, contacting suppliers, and issuing refunds are explicitly prohibited.
+
+## Technology stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite, TanStack Query |
+| Graph visualization | React Flow (`@xyflow/react`) |
+| Charts and icons | Recharts, Lucide React |
+| API | FastAPI, Pydantic, Uvicorn |
+| Trace graph | NetworkX |
+| Agent orchestration | Explicit typed Python state machine |
+| Model providers | Groq, Gemini, OpenRouter, deterministic mock |
+| Testing | pytest, TypeScript compiler, Vite production build |
+
+## Repository structure
+
+```text
+.
+├── frontend/                  React application and local demo fixtures
+│   └── src/
+│       ├── api/               Typed HTTP client
+│       ├── components/        Graph, review, comparison, and verification UI
+│       ├── hooks/             Scenario, graph, connection, and run state
+│       ├── mocks/             Optional frontend-only deterministic fixtures
+│       ├── screens/           Incident selection and command centre
+│       └── types/             Frontend API contract types
+├── backend/
+│   ├── agents/                Prompts, providers, trace adapter, workflow
+│   ├── api/                   FastAPI routes and per-run coordinator
+│   ├── models/                Shared public API contracts
+│   ├── policy/                Deterministic policy engine
+│   ├── scenarios/             Validated scenario manifests and graph builder
+│   ├── simulator/             State, trace tools, actions, verification
+│   └── tests/                 Backend integration and safety tests
+├── requirements.txt           Pinned Python dependencies
+└── pytest.ini                 Test configuration
+```
 
 ## Canonical scenarios
 
-- `clean-trace-01`
-- `over-recall-01`
-- `broken-trace-01`
+These scenario IDs are fixed shared contracts across the frontend, API, tests, and manifests.
 
-These IDs are part of the shared API contract and must match across the
-frontend, simulator manifests, and API responses.
+| ID | Scenario | Purpose |
+| --- | --- | --- |
+| `clean-trace-01` | Clean trace | Demonstrates a complete evidence chain and precise containment. |
+| `over-recall-01` | Correlation over-recall trap | Tests whether the system avoids holding a safe branch linked only by a misleading recent delivery. |
+| `broken-trace-01` | Broken relabelling chain | Tests fail-closed escalation when a defensible trace path cannot be reconstructed. |
 
-## Ownership
+## Local setup
 
-- Person A: `frontend/**`, `backend/agents/**`
-- Person B: `backend/api/**`, `backend/policy/**`, `backend/simulator/**`,
-  `backend/scenarios/**`
-- Shared review required: `backend/models/**`, root documentation, and API
-  contract changes
+### Prerequisites
 
-See [`AGENTS.md`](AGENTS.md) for repository working rules.
+- Python 3.11 or newer
+- Node.js 20.19+ or 22.12+
+- npm
+- Git
 
-## Frontend
+### 1. Clone the repository
 
 ```bash
-cd frontend
-npm install
-npm run dev
+git clone https://github.com/meddoesdev/faulcore.git
+cd faulcore
 ```
 
-The frontend defaults to the real API at `http://localhost:8000`. Set
-`VITE_USE_MOCKS=true` to use deterministic local fixtures instead. See the
-[backend demo setup](backend/api/README.md) for Windows commands, provider
-configuration, architecture, and known limits.
+### 2. Create the Python environment
 
-## Backend groundwork
-
-The backend uses Python 3.11+ with FastAPI, Pydantic, NetworkX, Uvicorn, and
-pytest. Install the pinned local development dependencies with:
+macOS or Linux:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Run the backend test suite with:
+Windows PowerShell:
 
-```bash
-python -m pytest backend/tests
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-The backend package structure, shared API models, structured JSON error
-handling, and Phase 1 routes are in place. Start the API with
-`python -m uvicorn backend.api.app:app --reload`. All three scenario cards and
-graphs load from validated JSON manifests. Phase 9 coordinates background runs
-through Person A's Phase 5 agent interface in the combined checkout.
+### 3. Configure the backend
 
-## Current status
+For a fully offline, deterministic run:
 
-Person B's Phase 1–10 backend work is present on review branches. The
-shared API models and Phase 1 FastAPI shell provide the agreed four routes.
-Phase 2 adds a validated `clean-trace-01` manifest and deterministic graph.
-Phase 3 adds six read-only trace tools. Phase 4 adds private in-memory inventory, orders,
-shipments, an append-only audit, and deterministic reset. Phase 5 adds the
-fail-closed policy checks for the four permitted actions; large or multi-region
-containment requires trusted human approval, and missing trace records force
-escalation. Phase 6 adds an internal action executor: diagnostics, inventory
-holds, fulfillment blocks, and incident escalation all pass policy first,
-record an audit outcome, and run a post-action verification query. Reset clears
-both operational state and executed-action history for another demo run. Phase 7
-adds private post-action scoring for FaultCore and baseline runs. It checks
-affected inventory, orders, and in-transit shipments, then calculates
-containment precision and recall, safe inventory preservation, under- and
-over-containment rates, and time to complete containment. Hidden ground truth
-is read only by this verification layer. Phase 8 adds the `over-recall-01` and
-`broken-trace-01` manifests and public
-graphs. The first has independent affected and safe branches; the second shows
-the missing relabelling record without inventing a causal link. Both use the
-existing policy and scoring behavior. Phase 9 starts isolated runs, maps agent
-assessments to the shared response models, expands final lot scopes from recorded
-inventory, applies policy-gated actions, and reports verification, metrics,
-events, and failures through run polling. The Arbiter's final scope controls
-FaultCore actions; unresolved or escalated decisions take only the internal
-escalation path. Development CORS allows localhost and 127.0.0.1 on port 5173.
+macOS or Linux:
 
-Person A's Phase 6 branch combines the agent and frontend layers with Person B's
-Phase 9 backend. Phase 10 adds combined-branch reviewer-isolation, policy-bypass,
-repeated-run, reset, and restart checks, plus setup and safety documentation.
-Run state is in memory: after a backend restart, earlier run IDs return `404`.
-The deterministic mock provider can be selected with `LLM_PROVIDER=mock` for
-offline testing. No action reaches an external system.
+```bash
+cp .env.example .env
+printf '\nLLM_PROVIDER=mock\n' >> .env
+```
 
+Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+Add-Content .env "`nLLM_PROVIDER=mock"
+```
+
+To use live models instead, copy `.env.example` to `.env`, add one or more provider keys, and leave `LLM_PROVIDER` unset. The default provider order is:
+
+```text
+Groq -> Gemini -> OpenRouter -> deterministic mock
+```
+
+Never commit `.env` or paste API keys into a run request.
+
+### 4. Start the API
+
+From the repository root:
+
+```bash
+python -m uvicorn backend.api.app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Confirm it is running:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+### 5. Start the frontend
+
+In a second terminal:
+
+```bash
+cd frontend
+cp .env.example .env
+npm ci
+npm run dev
+```
+
+On Windows, replace `cp .env.example .env` with `Copy-Item .env.example .env`.
+
+Open [http://localhost:5173](http://localhost:5173). The frontend connects to `http://localhost:8000` by default.
+
+### Frontend-only fixture mode
+
+If the backend is unavailable and only the interface needs to be demonstrated, set this in `frontend/.env`:
+
+```dotenv
+VITE_USE_MOCKS=true
+```
+
+Fixture mode is visually useful but does not exercise the live API, agents, policy engine, simulator, or private verifier.
+
+## Provider configuration
+
+| Variable | Purpose |
+| --- | --- |
+| `GROQ_API_KEY` | Groq credential |
+| `GEMINI_API_KEY` | Gemini credential |
+| `OPENROUTER_API_KEY` | OpenRouter credential |
+| `GROQ_MODEL` | Optional Groq model override |
+| `GEMINI_MODEL` | Optional Gemini model override |
+| `OPENROUTER_MODEL` | Optional OpenRouter model override |
+| `LLM_PROVIDER` | Force `groq`, `gemini`, `openrouter`, or `mock` |
+| `LLM_MODEL` | Generic model override when a provider is forced |
+| `LLM_API_KEY` | Generic key when a provider is forced |
+
+Provider provenance is attached to run events without exposing credentials or raw provider error bodies.
+
+## API reference
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/health` | API readiness check |
+| `GET` | `/api/scenarios` | List the three public scenarios |
+| `GET` | `/api/scenarios/{scenario_id}/graph` | Return the public operational trace graph |
+| `POST` | `/api/runs` | Start an asynchronous `faultcore` or `baseline` run |
+| `GET` | `/api/runs/{run_id}` | Poll run status and retrieve the complete result |
+
+Start a deterministic multi-agent run:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/runs \
+  -H 'Content-Type: application/json' \
+  -d '{"scenario_id":"clean-trace-01","mode":"faultcore"}'
+```
+
+The API returns `202 Accepted` with a run ID:
+
+```json
+{"run_id":"run-...","status":"running"}
+```
+
+Poll the run until its status becomes `completed` or `failed`:
+
+```bash
+curl http://127.0.0.1:8000/api/runs/run-...
+```
+
+FastAPI's interactive API documentation is available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+
+## Outcome metrics
+
+Both modes are measured by the same verifier:
+
+- **Containment precision** — proportion of contained inventory that was actually affected.
+- **Containment recall** — proportion of affected units successfully contained.
+- **Safe inventory preserved** — proportion of safe inventory that remained available.
+- **Under-containment rate** — affected inventory left uncontained.
+- **Over-containment rate** — safe inventory unnecessarily contained.
+- **Time to containment** — elapsed time only when the affected scope is fully contained; otherwise `0`.
+
+## Testing and validation
+
+Run the complete Python suite:
+
+```bash
+python -m pytest backend/tests backend/agents/tests -q
+```
+
+Build the production frontend:
+
+```bash
+cd frontend
+npm ci
+npm run build
+```
+
+The test suite covers API errors and routes, trace tools, scenario validation, policy decisions, action execution, verification, provider fallback, reviewer isolation, correction limits, run timeouts, repeated runs, reset behaviour, and hidden-ground-truth separation.
+
+## Safety properties
+
+- Scenario and API payloads are strictly validated; unexpected fields are rejected.
+- Supplier notices, complaints, and other evidence text are treated as untrusted data.
+- Agents cannot invent traceability links or use unknown identifiers as action targets.
+- Reviewer context isolation is enforced and tested.
+- Missing trace records and broad scopes escalate instead of silently executing.
+- A failed or timed-out run cannot publish late actions.
+- Each run receives fresh simulator and executor state.
+- Provider failure discards partial reasoning before fallback.
+- Hidden ground truth never appears in public scenario, graph, or run responses.
+- No action reaches an external inventory, order, supplier, or notification system.
+
+## Prototype limitations
+
+- Run state is held in memory; restarting the API removes previous run IDs.
+- There is no durable database, queue, authentication layer, or production authorization service.
+- Human approval is represented as trusted policy context, but the public prototype API does not expose an approval endpoint.
+- Containment actions affect only deterministic in-memory simulator state.
+- Live provider quality and latency depend on the configured third-party service; mock mode is deterministic and offline.
+
+## Additional documentation
+
+- [Backend architecture and demo setup](backend/api/README.md)
+- [Agent workflow](backend/agents/README.md)
+- [Shared API contract](backend/models/README.md)
+- [Repository ownership and development rules](AGENTS.md)
+
+## Ownership
+
+- Person A: `frontend/**` and `backend/agents/**`
+- Person B: `backend/api/**`, `backend/policy/**`, `backend/simulator/**`, and `backend/scenarios/**`
+- Shared review: `backend/models/**`, root documentation, and shared API contracts
