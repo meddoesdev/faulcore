@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import threading
 import time
+import math
 from datetime import datetime, timezone
 from typing import Any, Callable
 from uuid import uuid4
@@ -78,8 +79,9 @@ class RunCoordinator:
 
     def __init__(self, agent_runner: Callable[[ScenarioManifest, str], Any] = run_agent_workflow,
                  *, timeout_seconds: float = 120.0) -> None:
-        if timeout_seconds <= 0:
-            raise ValueError("run timeout must be positive")
+        if (type(timeout_seconds) not in {int, float} or not math.isfinite(timeout_seconds)
+                or timeout_seconds <= 0):
+            raise ValueError("run timeout must be a finite positive number")
         self._agent_runner = agent_runner
         self._timeout_seconds = timeout_seconds
         self._runs: dict[str, Run] = {}

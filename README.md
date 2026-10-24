@@ -33,9 +33,10 @@ npm install
 npm run dev
 ```
 
-The frontend uses deterministic mock data by default. Copy
-`frontend/.env.example` to `frontend/.env` and set `VITE_USE_MOCKS=false` when
-the backend API is available.
+The frontend defaults to the real API at `http://localhost:8000`. Set
+`VITE_USE_MOCKS=true` to use deterministic local fixtures instead. See the
+[backend demo setup](backend/api/README.md) for Windows commands, provider
+configuration, architecture, and known limits.
 
 ## Backend groundwork
 
@@ -56,11 +57,11 @@ The backend package structure, shared API models, structured JSON error
 handling, and Phase 1 routes are in place. Start the API with
 `python -m uvicorn backend.api.app:app --reload`. All three scenario cards and
 graphs load from validated JSON manifests. Phase 9 coordinates background runs
-through Person A's Phase 5 agent interface once the branches are integrated.
+through Person A's Phase 5 agent interface in the combined checkout.
 
 ## Current status
 
-Person B's Phase 1–9 backend work is present on stacked review branches. The
+Person B's Phase 1–10 backend work is present on review branches. The
 shared API models and Phase 1 FastAPI shell provide the agreed four routes.
 Phase 2 adds a validated `clean-trace-01` manifest and deterministic graph.
 Phase 3 adds six read-only trace tools. Phase 4 adds private in-memory inventory, orders,
@@ -86,9 +87,10 @@ events, and failures through run polling. The Arbiter's final scope controls
 FaultCore actions; unresolved or escalated decisions take only the internal
 escalation path. Development CORS allows localhost and 127.0.0.1 on port 5173.
 
-The Phase 9 branch contains only Person B files and needs Person A's Phase 5
-branch in the integration checkout before a live agent run can start. Run state
-is in memory: after a backend restart, earlier run IDs return `404`. The
-deterministic mock provider can be selected with `LLM_PROVIDER=mock` for offline
-testing. No action reaches an external system.
+Person A's Phase 6 branch combines the agent and frontend layers with Person B's
+Phase 9 backend. Phase 10 adds combined-branch reviewer-isolation, policy-bypass,
+repeated-run, reset, and restart checks, plus setup and safety documentation.
+Run state is in memory: after a backend restart, earlier run IDs return `404`.
+The deterministic mock provider can be selected with `LLM_PROVIDER=mock` for
+offline testing. No action reaches an external system.
 
