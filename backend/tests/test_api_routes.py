@@ -54,7 +54,6 @@ def test_mock_routes_match_shared_models() -> None:
         code, run = await request("GET", f"/api/runs/{start.run_id}")
         assert code == 200
         assert Run.model_validate(run).mode == "baseline"
-        assert run["metrics"] is None
 
         code, error = await request("GET", "/api/runs/absent")
         assert code == 404

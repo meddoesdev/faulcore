@@ -67,6 +67,7 @@ def test_broken_trace_keeps_missing_mapping_unlinked_and_escalates_actions():
     trace = TraceTools(manifest)
     assert trace.find_descendant_lots("ING-3099") == ("LOT-N18",)
     assert trace.find_traceability_gaps("LOT-R-UNKNOWN") == (
+        "RELABEL-MISSING: missing or corrupted record",
         "LOT-R-UNKNOWN: missing transformation input",
     )
 

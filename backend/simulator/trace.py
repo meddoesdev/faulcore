@@ -41,6 +41,7 @@ class TraceTools:
         self._inventory: tuple[Inventory, ...] = tuple(
             item.model_copy(deep=True) for item in manifest.inventory
         )
+        self._declared_gaps = tuple(manifest.missing_or_corrupted_records)
 
     def _require_lot(self, lot_id: str) -> Lot:
         try:
@@ -100,7 +101,8 @@ class TraceTools:
         """Report missing recorded links without hypothesizing replacement links."""
         self._require_lot(lot_id)
         involved = {lot_id, *self.find_descendant_lots(lot_id)}
-        gaps: list[str] = []
+        gaps: list[str] = [f"{record_id}: missing or corrupted record"
+                           for record_id in self._declared_gaps]
         for descendant_id in sorted(involved):
             lot = self._lots[descendant_id]
             if lot.kind == "finished" and not any(

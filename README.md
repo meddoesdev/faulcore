@@ -55,12 +55,12 @@ python -m pytest backend/tests
 The backend package structure, shared API models, structured JSON error
 handling, and Phase 1 routes are in place. Start the API with
 `python -m uvicorn backend.api.app:app --reload`. All three scenario cards and
-graphs now load from validated JSON manifests. Run creation and polling remain
-Phase 1 mocks; a run stays `running` until later phases implement execution.
+graphs load from validated JSON manifests. Phase 9 coordinates background runs
+through Person A's Phase 5 agent interface once the branches are integrated.
 
 ## Current status
 
-Person B's Phase 1–8 backend work is present on stacked review branches. The
+Person B's Phase 1–9 backend work is present on stacked review branches. The
 shared API models and Phase 1 FastAPI shell provide the agreed four routes.
 Phase 2 adds a validated `clean-trace-01` manifest and deterministic graph.
 Phase 3 adds six read-only trace tools. Phase 4 adds private in-memory inventory, orders,
@@ -79,10 +79,16 @@ is read only by this verification layer. Phase 8 adds the `over-recall-01` and
 `broken-trace-01` manifests and public
 graphs. The first has independent affected and safe branches; the second shows
 the missing relabelling record without inventing a causal link. Both use the
-existing policy and scoring behavior.
+existing policy and scoring behavior. Phase 9 starts isolated runs, maps agent
+assessments to the shared response models, expands final lot scopes from recorded
+inventory, applies policy-gated actions, and reports verification, metrics,
+events, and failures through run polling. The Arbiter's final scope controls
+FaultCore actions; unresolved or escalated decisions take only the internal
+escalation path. Development CORS allows localhost and 127.0.0.1 on port 5173.
 
-These components are not yet wired into completed API runs or Person A's agent
-orchestration. `POST /api/runs` still returns a mock run that remains `running`;
-the Phase 7 scorer is not yet called by the API. The live run lifecycle is
-Phase 9. No action reaches an external system.
+The Phase 9 branch contains only Person B files and needs Person A's Phase 5
+branch in the integration checkout before a live agent run can start. Run state
+is in memory: after a backend restart, earlier run IDs return `404`. The
+deterministic mock provider can be selected with `LLM_PROVIDER=mock` for offline
+testing. No action reaches an external system.
 
