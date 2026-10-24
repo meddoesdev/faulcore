@@ -89,14 +89,16 @@ class AgentWorkflow:
                     mock=provider.name == "mock",
                 )
                 return completed.result
-            except ProviderUnavailable as exc:
+            except ProviderUnavailable:
                 # Discard every partial result and restart the full reasoning run.
-                unavailable.append(ProviderAttempt(provider.name, provider.model, str(exc)))
+                unavailable.append(
+                    ProviderAttempt(provider.name, provider.model, "Provider unavailable.")
+                )
                 continue
             except InvalidModelOutput as exc:
                 return AgentRunResult(status="failed", mode=mode, error=str(exc))
-            except Exception as exc:  # clean workflow boundary; never leak partial decisions
-                return AgentRunResult(status="failed", mode=mode, error=f"Agent workflow failed: {exc}")
+            except Exception:  # clean workflow boundary; never leak partial decisions or errors
+                return AgentRunResult(status="failed", mode=mode, error="Agent workflow failed.")
         return AgentRunResult(status="failed", mode=mode, error="No configured provider was available")
 
     def _execute(

@@ -146,28 +146,12 @@ class JsonHttpProvider(ValidatedProvider):
                         return json.loads(response.read().decode("utf-8"))
                 except Exception as retry_exc:  # network boundary
                     raise ProviderUnavailable(f"{self.name} remained rate limited") from retry_exc
-            detail = self._safe_http_error_detail(exc)
-            suffix = f": {detail}" if detail else ""
-            raise ProviderUnavailable(f"{self.name} HTTP {exc.code}{suffix}") from exc
+            # Provider response bodies are untrusted and can reflect request data.
+            # Keep the status code for operations without copying the body into
+            # logs, smoke output, or run provenance.
+            raise ProviderUnavailable(f"{self.name} HTTP {exc.code}") from exc
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
             raise ProviderUnavailable(f"{self.name} request failed") from exc
-
-    @staticmethod
-    def _safe_http_error_detail(exc: urllib.error.HTTPError) -> str:
-        """Return a short provider message without echoing request credentials."""
-        try:
-            payload = json.loads(exc.read().decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError, OSError):
-            return ""
-        error = payload.get("error", payload) if isinstance(payload, dict) else {}
-        if isinstance(error, dict):
-            detail = error.get("message") or error.get("status") or error.get("code")
-        else:
-            detail = error
-        if not isinstance(detail, (str, int, float)):
-            return ""
-        text = " ".join(str(detail).split())
-        return text[:300]
 
     def _complete(self, request: ModelRequest[OutputT], *, repair: str | None) -> Any:
         return self._extract(self._post(self._body(request, repair)))

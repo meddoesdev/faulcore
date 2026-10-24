@@ -38,12 +38,12 @@ def main() -> int:
                 "model": provider.model,
                 "ok": output.status == "ok",
             })
-        except Exception as exc:  # provider boundary; message is credential-safe
+        except Exception:  # provider boundary: never print untrusted exception text
             results.append({
                 "provider": provider.name,
                 "model": provider.model,
                 "ok": False,
-                "error": str(exc),
+                "error": "Provider check failed.",
             })
 
     print(json.dumps(results, indent=2))

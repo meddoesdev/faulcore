@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import io
 import json
 import unittest
+import urllib.error
+from contextlib import redirect_stdout
 from dataclasses import dataclass
+from unittest.mock import patch
 
 from backend.agents.mock_provider import DeterministicMockProvider
 from backend.agents.providers import (
@@ -15,6 +19,7 @@ from backend.agents.providers import (
     provider_chain_from_env,
 )
 from backend.agents.schemas import BaselineOutput
+from backend.agents.smoke_providers import main as smoke_main
 from backend.agents.trace import FakeTraceTools, PersonBTraceAdapter
 from backend.agents.workflow import AgentWorkflow, IncidentInput
 
@@ -55,7 +60,7 @@ class FailOnReviewer(SpyProvider):
     def generate(self, request):
         self.requests.append(request)
         if request.role == "reviewer":
-            raise ProviderUnavailable("quota exhausted")
+            raise ProviderUnavailable("upstream reflected secret: gsk_do-not-print")
         return self._mock.generate(request)
 
 
@@ -109,6 +114,10 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result.provenance.provider, "spy")
         self.assertTrue(result.provenance.fallback_used)
         self.assertEqual(len(result.provenance.unavailable_attempts), 1)
+        self.assertEqual(
+            result.provenance.unavailable_attempts[0]["error"], "Provider unavailable."
+        )
+        self.assertNotIn("gsk_do-not-print", result.model_dump_json())
 
     def test_invalid_output_gets_one_repair_then_clean_failure(self) -> None:
         provider = QueuedValidatedProvider([{"summary": "missing fields"}, {"still": "invalid"}])
@@ -182,6 +191,39 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(body["response_format"]["json_schema"]["strict"])
         self.assertEqual(provider._headers()["Authorization"], "Bearer test-key")
         self.assertEqual(provider._headers()["User-Agent"], "RecallScope/1.0")
+
+    def test_http_error_body_is_not_copied_into_provider_error(self) -> None:
+        provider = OpenAICompatibleProvider(
+            name="groq", model="test-model", api_key="test-key",
+            url="https://example.test/completions", strict=True,
+        )
+        reflected_secret = b'{"error":{"message":"credential gsk_do-not-print"}}'
+        http_error = urllib.error.HTTPError(
+            provider._url, 400, "Bad Request", {}, io.BytesIO(reflected_secret)
+        )
+        with patch("backend.agents.providers.urllib.request.urlopen", side_effect=http_error):
+            with self.assertRaisesRegex(ProviderUnavailable, "^groq HTTP 400$") as raised:
+                provider._post({"model": "test-model"})
+        self.assertNotIn("gsk_do-not-print", str(raised.exception))
+
+    def test_smoke_output_never_prints_exception_text(self) -> None:
+        class FailingProvider:
+            name = "test-provider"
+            model = "test-model"
+            configured = True
+
+            def generate(self, _request):
+                raise RuntimeError("credential gsk_do-not-print")
+
+        output = io.StringIO()
+        with patch(
+            "backend.agents.smoke_providers.provider_chain_from_env",
+            return_value=[FailingProvider()],
+        ), redirect_stdout(output):
+            self.assertEqual(smoke_main(), 1)
+        rendered = output.getvalue()
+        self.assertNotIn("gsk_do-not-print", rendered)
+        self.assertIn("Provider check failed.", rendered)
 
     def test_gemini_keeps_key_out_of_url_and_uses_structured_json(self) -> None:
         provider = GeminiProvider(model="gemini-3.8-flash", api_key="test-key")
