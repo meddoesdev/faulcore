@@ -63,7 +63,7 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
         <div className="command-actions">
           <button className="secondary-button">View source data <ArrowUpRight size={15} /></button>
           <div className="mode-toggle" aria-label="Run mode">
-            <button data-active={mode === 'faultcore'} disabled={isRunActive} onClick={() => setMode('faultcore')}>FaultCore</button>
+            <button data-active={mode === 'faultcore'} disabled={isRunActive} onClick={() => setMode('faultcore')}>arivu.ai</button>
             <button data-active={mode === 'baseline'} disabled={isRunActive} onClick={() => setMode('baseline')}>Baseline</button>
           </div>
           <button className="primary-button run-button" disabled={isRunActive} onClick={runController.start}><Play size={14} /> {runLabel}</button>
@@ -89,7 +89,7 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
       <section className="status-strip" aria-label="Incident status">
         <div><span className="status-icon"><Route size={16} /></span><span>Trace state</span><strong>{graph.isPending ? 'Loading' : 'Evidence loaded'}</strong></div>
         <div><span className="status-icon"><Network size={16} /></span><span>Exposure nodes</span><strong>{graph.data ? exposedNodes.length.toString().padStart(2, '0') : '—'}</strong></div>
-        <div><span className="status-icon"><Clock3 size={16} /></span><span>Run mode</span><strong>{mode === 'faultcore' ? 'FaultCore agents' : 'Single-agent baseline'}</strong></div>
+        <div><span className="status-icon"><Clock3 size={16} /></span><span>Run mode</span><strong>{mode === 'faultcore' ? 'arivu.ai agents' : 'Single-agent baseline'}</strong></div>
         <div><span className="status-icon"><ShieldAlert size={16} /></span><span>Containment</span><strong>{runController.error ? 'Run error' : run?.status === 'completed' ? 'Verified' : run?.status === 'running' || runController.isStarting ? 'In progress' : isBrokenTrace ? 'Review needed' : 'Not started'}</strong></div>
       </section>
 
@@ -119,7 +119,7 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
           <header className="panel-header compact">
             <div><span className="panel-index">02</span><div><h2>Potential scope</h2><p>Affected and possible lots</p></div></div>
           </header>
-          <div className="scope-list">
+          <div className="scope-list" tabIndex={0} aria-label="Potential scope lots">
             {graph.isPending && <p className="muted-copy">Loading inventory positions…</p>}
             {exposedNodes.slice(0, 5).map((node) => (
               <div className="scope-row" key={node.id}>

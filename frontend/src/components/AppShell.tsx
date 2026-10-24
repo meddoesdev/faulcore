@@ -29,7 +29,7 @@ export function AppShell({ view, incidentLabel, connection, onNavigate, children
       <a className="rs-skip-link" href="#main-content">Skip to incident workspace</a>
       <header className="rs-topbar">
         <div className="rs-topbar-inner">
-          <button className="rs-wordmark" onClick={() => onNavigate('incidents')} aria-label="RecallScope home">RecallScope</button>
+          <button className="rs-wordmark" onClick={() => onNavigate('incidents')} aria-label="arivu.ai home">arivu.ai</button>
           <nav className="rs-primary-nav" aria-label="Primary navigation">
             <button className="rs-nav-button" data-active={view === 'incidents'} onClick={() => onNavigate('incidents')}><RadioTower size={16} />Incidents</button>
             <button className="rs-nav-button" data-active={view === 'command'} disabled={!incidentLabel} onClick={() => navigateTo('command')}><Activity size={16} />Command centre</button>

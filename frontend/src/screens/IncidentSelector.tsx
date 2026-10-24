@@ -36,7 +36,7 @@ export function IncidentSelector({ onSelect }: IncidentSelectorProps) {
             <span><ShieldCheck size={15} /> Deterministic policy remains in control</span>
           </div>
         </div>
-        <div className="hero-proof" aria-label="RecallScope operating principles">
+        <div className="hero-proof" aria-label="arivu.ai operating principles">
           <span><strong>01</strong> Independent review</span>
           <span><strong>02</strong> Policy-gated action</span>
           <span><strong>03</strong> Verified outcomes</span>
@@ -70,7 +70,7 @@ export function IncidentSelector({ onSelect }: IncidentSelectorProps) {
       </section>
 
       <section className="workflow-story">
-        <div className="section-intro compact"><p className="section-kicker"><Boxes size={14} /> How RecallScope works</p><h2>A defensible path from signal to release.</h2></div>
+        <div className="section-intro compact"><p className="section-kicker"><Boxes size={14} /> How arivu.ai works</p><h2>A defensible path from signal to release.</h2></div>
         <ol>
           <li><span><CircleAlert size={17} /></span><strong>Ingest</strong><p>Load the incident and trace evidence.</p></li>
           <li><span><Search size={17} /></span><strong>Investigate</strong><p>Reconstruct the likely exposure path.</p></li>

@@ -39,7 +39,7 @@ export function VerificationPanel({ run }: VerificationPanelProps) {
         <article><span><PackageCheck size={15} /> Affected units</span><strong>{verification.affected_units.toLocaleString()}</strong><small>Known scenario total</small></article>
         <article><span><ShieldCheck size={15} /> Contained</span><strong>{verification.contained_units.toLocaleString()}</strong><small>{verification.missed_units.toLocaleString()} units missed</small></article>
         <article data-warning={verification.safe_units_held > 0}><span><AlertTriangle size={15} /> Safe units held</span><strong>{verification.safe_units_held.toLocaleString()}</strong><small>{verification.safe_units_available.toLocaleString()} remained available</small></article>
-        <article><span><Gauge size={15} /> Time to contain</span><strong>{metrics.time_to_containment_seconds}s</strong><small>End-to-end workflow</small></article>
+        <article><span><Gauge size={15} /> Time to contain</span><strong>{metrics.time_to_containment_seconds.toFixed(3)}s</strong><small>End-to-end workflow</small></article>
       </div>
 
       <div className="effectiveness-grid">

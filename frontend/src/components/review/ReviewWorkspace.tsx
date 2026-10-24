@@ -83,7 +83,7 @@ export function ReviewWorkspace({ run, isLoading, error, onReplay }: ReviewWorks
   }
 
   if (!run) {
-    return <section className="review-workspace run-empty-state"><Play size={23} /><div><strong>Analysis is ready</strong><p>Choose FaultCore or baseline, then start a run to stream the agent workflow.</p></div></section>
+    return <section className="review-workspace run-empty-state"><Play size={23} /><div><strong>Analysis is ready</strong><p>Choose arivu.ai or baseline, then start a run to stream the agent workflow.</p></div></section>
   }
 
   return (
@@ -103,7 +103,7 @@ export function ReviewWorkspace({ run, isLoading, error, onReplay }: ReviewWorks
       <div className="assessment-grid">
         <AssessmentPanel role="investigator" assessment={run.investigator} visible={investigatorVisible} />
         {baseline ? (
-          <section className="assessment-panel bypass-panel" data-role="reviewer"><ShieldCheck size={21} /><strong>Independent review bypassed</strong><p>Baseline mode intentionally uses a single agent so its result can be measured against FaultCore.</p></section>
+          <section className="assessment-panel bypass-panel" data-role="reviewer"><ShieldCheck size={21} /><strong>Independent review bypassed</strong><p>Baseline mode intentionally uses a single agent so its result can be measured against arivu.ai.</p></section>
         ) : <AssessmentPanel role="reviewer" assessment={run.reviewer} visible={reviewerVisible} />}
       </div>
 
@@ -134,7 +134,7 @@ export function ReviewWorkspace({ run, isLoading, error, onReplay }: ReviewWorks
         <section className="policy-panel" data-visible={policyVisible}>
           <header><span><ListChecks size={17} /></span><div><h3>Deterministic policy</h3><p>Non-negotiable controls</p></div>{policyVisible && <strong>{run.policy_checks.filter((check) => check.status === 'pass').length}/{run.policy_checks.length} passed</strong>}</header>
           {!policyVisible ? <div className="panel-wait"><Clock3 size={16} /><span>Waiting for scope decision</span></div> : run.policy_checks.length ? (
-            <div className="policy-list">{run.policy_checks.map((check, index) => (
+            <div className="policy-list" tabIndex={0} aria-label="Deterministic policy checks">{run.policy_checks.map((check, index) => (
               <div className="policy-row" data-status={check.status} key={`${check.id}-${index}`}>
                 <span>{check.status === 'pass' ? <Check size={13} /> : check.status === 'fail' ? <X size={13} /> : <AlertOctagon size={13} />}</span>
                 <div><strong>{check.name}</strong><p>{check.detail}</p></div><em>{check.status}</em>
