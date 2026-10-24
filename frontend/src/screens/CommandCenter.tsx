@@ -13,14 +13,15 @@ import {
   Route,
   ShieldAlert,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { StatusPill } from '../components/StatusPill'
+import { ComparisonReport } from '../components/comparison/ComparisonReport'
 import { ExposureGraph } from '../components/graph/ExposureGraph'
 import { ReviewWorkspace } from '../components/review/ReviewWorkspace'
 import { VerificationPanel } from '../components/verification/VerificationPanel'
 import { useGraph } from '../hooks/useGraph'
 import { useRunController } from '../hooks/useRunController'
-import type { GraphNode, RunMode, Scenario } from '../types'
+import type { GraphNode, Run, RunMode, Scenario } from '../types'
 
 interface CommandCenterProps {
   scenario: Scenario
@@ -33,6 +34,7 @@ function exposureCount(nodes: GraphNode[], exposure: GraphNode['exposure']) {
 
 export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
   const [mode, setMode] = useState<RunMode>('faultcore')
+  const [completedRuns, setCompletedRuns] = useState<Partial<Record<RunMode, Run>>>({})
   const graph = useGraph(scenario.id)
   const runController = useRunController(scenario.id, mode)
   const run = runController.run
@@ -42,6 +44,12 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
   const isRunActive = runController.isStarting || run?.status === 'running'
   const hasStage = (stage: 'investigation' | 'review' | 'arbitration' | 'policy') => run?.events.some((event) => event.stage === stage) ?? false
   const runLabel = runController.isStarting ? 'Starting…' : run?.status === 'running' ? 'Run in progress' : run?.status === 'completed' ? 'Run again' : 'Run containment'
+
+  useEffect(() => {
+    if (run?.status === 'completed' && run.metrics && run.verification) {
+      setCompletedRuns((current) => ({ ...current, [run.mode]: run }))
+    }
+  }, [run])
 
   return (
     <div className="screen-stack command-center">
@@ -153,6 +161,7 @@ export function CommandCenter({ scenario, onBack }: CommandCenterProps) {
 
       <ReviewWorkspace run={run} isLoading={runController.isStarting || runController.isPolling} error={runController.error} onReplay={runController.start} />
       <VerificationPanel run={run} />
+      <ComparisonReport scenario={scenario} runs={completedRuns} onSelectMode={setMode} />
     </div>
   )
 }

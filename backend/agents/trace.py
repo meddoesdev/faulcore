@@ -97,14 +97,14 @@ class FakeTraceTools:
             ),
         ),
         "broken-trace-01": _Fixture(
-            backward=("ING-3018",),
-            forward=("ING-3018", "TX-440", "LOT-N18", "DC-NORTH"),
+            backward=("ING-3099",),
+            forward=("ING-3099", "TX-440", "LOT-N18", "STORE-GROUP-7"),
             descendants=("LOT-N18",),
             positions=(
-                {"lot_id": "LOT-N18", "location_id": "DC-NORTH", "quantity": 480, "status": "available"},
-                {"lot_id": "RELABELLED-UNKNOWN", "location_id": "DC-NORTH", "quantity": 920, "status": "available"},
+                {"lot_id": "LOT-N18", "location_id": "STORE-GROUP-7", "quantity": 480, "status": "available"},
+                {"lot_id": "LOT-R-UNKNOWN", "location_id": "STORE-GROUP-7", "quantity": 920, "status": "available"},
             ),
-            gaps=("Missing mapping from LOT-N18 to its replacement lot code",),
+            gaps=("RELABEL-MISSING: missing or corrupted record",),
         ),
     }
 

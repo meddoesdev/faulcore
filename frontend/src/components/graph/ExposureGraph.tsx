@@ -45,7 +45,6 @@ export function ExposureGraph({ graph }: ExposureGraphProps) {
         maxZoom={1.65}
         fitView
         fitViewOptions={{ padding: 0.2, maxZoom: 1.1 }}
-        proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#26384a" />
         <Controls showInteractive={false} position="bottom-left" />
@@ -89,4 +88,3 @@ export function ExposureGraph({ graph }: ExposureGraphProps) {
     </div>
   )
 }
-

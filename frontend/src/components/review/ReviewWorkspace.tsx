@@ -106,8 +106,8 @@ export function ReviewWorkspace({ run, isLoading, error, onReplay }: ReviewWorks
         <section className="policy-panel" data-visible={policyVisible}>
           <header><span><ListChecks size={17} /></span><div><h3>Deterministic policy</h3><p>Non-negotiable controls</p></div>{policyVisible && <strong>{run.policy_checks.filter((check) => check.status === 'pass').length}/{run.policy_checks.length} passed</strong>}</header>
           {!policyVisible ? <div className="panel-wait"><Clock3 size={16} /><span>Waiting for scope decision</span></div> : run.policy_checks.length ? (
-            <div className="policy-list">{run.policy_checks.map((check) => (
-              <div className="policy-row" data-status={check.status} key={check.id}>
+            <div className="policy-list">{run.policy_checks.map((check, index) => (
+              <div className="policy-row" data-status={check.status} key={`${check.id}-${index}`}>
                 <span>{check.status === 'pass' ? <Check size={13} /> : check.status === 'fail' ? <X size={13} /> : <AlertOctagon size={13} />}</span>
                 <div><strong>{check.name}</strong><p>{check.detail}</p></div><em>{check.status}</em>
               </div>

@@ -13,7 +13,7 @@ import type {
   StartRunResponse,
 } from '../types'
 
-const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false'
+const useMocks = import.meta.env.VITE_USE_MOCKS === 'true'
 const apiUrl = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/$/, '')
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -52,4 +52,3 @@ export const api = {
     return useMocks ? getMockRun(runId) : request(`/api/runs/${encodeURIComponent(runId)}`)
   },
 }
-

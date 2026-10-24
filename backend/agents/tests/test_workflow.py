@@ -21,7 +21,7 @@ def incident(scenario: str = "over-recall-01") -> IncidentInput:
     seeds = {
         "clean-trace-01": "ING-1042",
         "over-recall-01": "ING-2010",
-        "broken-trace-01": "ING-3018",
+        "broken-trace-01": "ING-3099",
     }
     return IncidentInput(
         scenario_id=scenario,
@@ -153,6 +153,15 @@ class WorkflowTests(unittest.TestCase):
                     result = AgentWorkflow(FakeTraceTools(), []).run(incident(scenario), mode)
                     self.assertEqual(result.status, "completed")
                     self.assertTrue(result.provenance.mock)
+
+    def test_broken_trace_mock_uses_recorded_identifier_without_claiming_a_link(self) -> None:
+        result = AgentWorkflow(FakeTraceTools(), []).run(
+            incident("broken-trace-01"), "faultcore"
+        )
+        self.assertEqual(result.arbiter.decision, "escalate")
+        self.assertEqual(result.arbiter.final_scope_lot_ids, ["LOT-N18", "LOT-R-UNKNOWN"])
+        self.assertNotIn("RELABELLED-UNKNOWN", result.model_dump_json())
+        self.assertIn("no recorded source link", result.investigator.summary)
 
     def test_environment_chain_has_approved_order_and_models(self) -> None:
         providers = provider_chain_from_env({})

@@ -61,10 +61,10 @@ class DeterministicMockProvider:
                 predicted_outcome="Contain G-31 while preserving the independent G-32 branch.",
             )
         return InvestigatorOutput(
-            summary="Known LOT-N18 exposure is confirmed, but the relabelled descendant cannot be identified.",
+            summary="Known LOT-N18 exposure is confirmed, while LOT-R-UNKNOWN has no recorded source link.",
             affected_lot_ids=["LOT-N18"],
-            possibly_affected_lot_ids=["RELABELLED-UNKNOWN"],
-            evidence=[_evidence("trace-broken", "Recorded trace ends before the relabelled identifier.")],
+            possibly_affected_lot_ids=["LOT-R-UNKNOWN"],
+            evidence=[_evidence("trace-broken", "Recorded trace ends before any link to LOT-R-UNKNOWN.")],
             missing_evidence=["Relabelling map"],
             recommended_actions=["run_trace_diagnostics", "escalate_incident"],
             confidence=0.55,
@@ -92,9 +92,9 @@ class DeterministicMockProvider:
                 confidence=0.96,
             )
         return ReviewerOutput(
-            summary="A narrow scope is not defensible while the replacement lot identifier is missing.",
+            summary="A narrow scope is not defensible while LOT-R-UNKNOWN has no recorded source mapping.",
             affected_lot_ids=["LOT-N18"],
-            possibly_affected_lot_ids=["RELABELLED-UNKNOWN"],
+            possibly_affected_lot_ids=["LOT-R-UNKNOWN"],
             evidence=[_evidence("review-broken", "Relabelled stock lacks a recorded source mapping.")],
             missing_evidence=["Relabelling map"],
             alternative_explanations=["Replacement stock may contain affected or safe source lots"],
@@ -123,7 +123,7 @@ class DeterministicMockProvider:
             )
         return ArbiterOutput(
             decision="escalate", summary="Missing relabelling evidence prevents a defensible narrow action.",
-            final_scope_lot_ids=["LOT-N18", "RELABELLED-UNKNOWN"],
+            final_scope_lot_ids=["LOT-N18", "LOT-R-UNKNOWN"],
             disagreements=["Exact identity of relabelled descendants"],
             required_diagnostic="Recover or reconcile the relabelling map.", confidence=0.91,
         )
