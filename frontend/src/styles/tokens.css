@@ -1,0 +1,113 @@
+:root {
+  color-scheme: light;
+
+  --rs-canvas: #fbf8f3;
+  --rs-surface: #ffffff;
+  --rs-surface-sunk: #f3eee6;
+  --rs-surface-raised: #fffdf9;
+  --rs-ink: #14110f;
+  --rs-ink-muted: #6b635b;
+  --rs-ink-faint: #91877d;
+  --rs-line: #e6dfd5;
+  --rs-line-strong: #d2c7ba;
+  --rs-brand: #f26a21;
+  --rs-brand-strong: #c94d0b;
+  --rs-brand-soft: #ffe6d2;
+  --rs-sunrise: linear-gradient(120deg, #fff4e8 0%, #ffd7bd 46%, #fbf8f3 100%);
+
+  --rs-dark: #12100e;
+  --rs-dark-muted: #bdb4aa;
+  --rs-dark-line: #2a2622;
+
+  --rs-affected: #b9322a;
+  --rs-affected-soft: #f9dedb;
+  --rs-possible: #a96808;
+  --rs-possible-soft: #fff0c9;
+  --rs-safe: #087f6b;
+  --rs-safe-soft: #dff3ed;
+  --rs-held: #4d668c;
+  --rs-held-soft: #e5ebf4;
+  --rs-transit: #332e2a;
+  --rs-disagreement: #7651a8;
+  --rs-disagreement-soft: #eee5f8;
+
+  --rs-font-sans: "Instrument Sans", sans-serif;
+  --rs-font-display: "Fraunces", serif;
+  --rs-font-mono: "JetBrains Mono", monospace;
+
+  --rs-space-1: 0.25rem;
+  --rs-space-2: 0.5rem;
+  --rs-space-3: 0.75rem;
+  --rs-space-4: 1rem;
+  --rs-space-5: 1.5rem;
+  --rs-space-6: 2rem;
+  --rs-space-7: 3rem;
+  --rs-space-8: 4.5rem;
+
+  --rs-radius-control: 12px;
+  --rs-radius-card: 18px;
+  --rs-radius-window: 22px;
+  --rs-shadow-focus: 0 0 0 3px rgba(242, 106, 33, 0.24);
+
+  /* Compatibility aliases keep the existing Phase 6 views legible while
+     each screen moves onto the new primitives in later redesign phases. */
+  --bg-0: var(--rs-canvas);
+  --surface-1: var(--rs-surface);
+  --surface-2: var(--rs-surface-sunk);
+  --surface-3: #ece5dc;
+  --line-subtle: var(--rs-line);
+  --line-strong: var(--rs-line-strong);
+  --text-primary: var(--rs-ink);
+  --text-secondary: var(--rs-ink-muted);
+  --text-muted: var(--rs-ink-faint);
+  --accent: var(--rs-brand);
+  --accent-dim: var(--rs-brand-soft);
+  --confirmed: var(--rs-affected);
+  --confirmed-dim: var(--rs-affected-soft);
+  --possible: var(--rs-possible);
+  --possible-dim: var(--rs-possible-soft);
+  --excluded: var(--rs-safe);
+  --excluded-dim: var(--rs-safe-soft);
+  --held: var(--rs-held);
+  --held-dim: var(--rs-held-soft);
+  --cleared: var(--rs-safe);
+  --cleared-dim: var(--rs-safe-soft);
+  --danger: var(--rs-affected);
+  --radius-sm: var(--rs-radius-control);
+  --radius-md: var(--rs-radius-card);
+}
+
+@theme inline {
+  --color-canvas: var(--rs-canvas);
+  --color-surface: var(--rs-surface);
+  --color-surface-sunk: var(--rs-surface-sunk);
+  --color-ink: var(--rs-ink);
+  --color-ink-muted: var(--rs-ink-muted);
+  --color-line: var(--rs-line);
+  --color-brand: var(--rs-brand);
+  --color-affected: var(--rs-affected);
+  --color-possible: var(--rs-possible);
+  --color-safe: var(--rs-safe);
+  --color-held: var(--rs-held);
+  --color-disagreement: var(--rs-disagreement);
+  --font-sans: var(--rs-font-sans);
+  --font-mono: var(--rs-font-mono);
+}
+
+html { background: var(--rs-canvas); }
+
+body {
+  color: var(--rs-ink);
+  background: var(--rs-canvas);
+  font-family: var(--rs-font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+button, input, select, textarea { font: inherit; }
+
+::selection { color: var(--rs-ink); background: var(--rs-brand-soft); }
+
+:focus-visible { outline: 2px solid var(--rs-brand); outline-offset: 3px; }
+
+.mono { font-family: var(--rs-font-mono); font-variant-numeric: tabular-nums; }

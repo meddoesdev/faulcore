@@ -33,13 +33,64 @@ npm install
 npm run dev
 ```
 
-The frontend uses deterministic mock data by default. Copy
-`frontend/.env.example` to `frontend/.env` and set `VITE_USE_MOCKS=false` when
-the backend API is available.
+The frontend defaults to the real API at `http://localhost:8000`. Set
+`VITE_USE_MOCKS=true` to use deterministic local fixtures instead. See the
+[backend demo setup](backend/api/README.md) for Windows commands, provider
+configuration, architecture, and known limits.
+
+## Backend groundwork
+
+The backend uses Python 3.11+ with FastAPI, Pydantic, NetworkX, Uvicorn, and
+pytest. Install the pinned local development dependencies with:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Run the backend test suite with:
+
+```bash
+python -m pytest backend/tests
+```
+
+The backend package structure, shared API models, structured JSON error
+handling, and Phase 1 routes are in place. Start the API with
+`python -m uvicorn backend.api.app:app --reload`. All three scenario cards and
+graphs load from validated JSON manifests. Phase 9 coordinates background runs
+through Person A's Phase 5 agent interface in the combined checkout.
 
 ## Current status
 
-Phase 0 is complete on Person A's side: the frontend scaffold, typed API
-contracts, mock scenario/run data, API client switch, and draft agent output
-schemas are present. Later phases must be approved before implementation.
+Person B's Phase 1–10 backend work is present on review branches. The
+shared API models and Phase 1 FastAPI shell provide the agreed four routes.
+Phase 2 adds a validated `clean-trace-01` manifest and deterministic graph.
+Phase 3 adds six read-only trace tools. Phase 4 adds private in-memory inventory, orders,
+shipments, an append-only audit, and deterministic reset. Phase 5 adds the
+fail-closed policy checks for the four permitted actions; large or multi-region
+containment requires trusted human approval, and missing trace records force
+escalation. Phase 6 adds an internal action executor: diagnostics, inventory
+holds, fulfillment blocks, and incident escalation all pass policy first,
+record an audit outcome, and run a post-action verification query. Reset clears
+both operational state and executed-action history for another demo run. Phase 7
+adds private post-action scoring for FaultCore and baseline runs. It checks
+affected inventory, orders, and in-transit shipments, then calculates
+containment precision and recall, safe inventory preservation, under- and
+over-containment rates, and time to complete containment. Hidden ground truth
+is read only by this verification layer. Phase 8 adds the `over-recall-01` and
+`broken-trace-01` manifests and public
+graphs. The first has independent affected and safe branches; the second shows
+the missing relabelling record without inventing a causal link. Both use the
+existing policy and scoring behavior. Phase 9 starts isolated runs, maps agent
+assessments to the shared response models, expands final lot scopes from recorded
+inventory, applies policy-gated actions, and reports verification, metrics,
+events, and failures through run polling. The Arbiter's final scope controls
+FaultCore actions; unresolved or escalated decisions take only the internal
+escalation path. Development CORS allows localhost and 127.0.0.1 on port 5173.
+
+Person A's Phase 6 branch combines the agent and frontend layers with Person B's
+Phase 9 backend. Phase 10 adds combined-branch reviewer-isolation, policy-bypass,
+repeated-run, reset, and restart checks, plus setup and safety documentation.
+Run state is in memory: after a backend restart, earlier run IDs return `404`.
+The deterministic mock provider can be selected with `LLM_PROVIDER=mock` for
+offline testing. No action reaches an external system.
 
