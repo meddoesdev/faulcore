@@ -102,13 +102,13 @@ export function ComparisonReport({ scenario, runs, onSelectMode }: ComparisonRep
           <div className="comparison-chart" role="img" aria-label="Grouped bar chart comparing FaultCore and baseline containment metrics">
             <ResponsiveContainer width="100%" height={330}>
               <BarChart data={metricRows(faultcore, baseline)} margin={{ top: 24, right: 24, left: 0, bottom: 8 }}>
-                <CartesianGrid stroke="#1c2a3a" vertical={false} />
-                <XAxis dataKey="metric" stroke="#63758a" tick={{ fontSize: 10 }} />
-                <YAxis domain={[0, 100]} unit="%" stroke="#63758a" tick={{ fontSize: 10 }} />
-                <Tooltip contentStyle={{ background: '#0e1825', border: '1px solid #2a3b4f', borderRadius: 6 }} formatter={(value) => [`${value}%`]} />
+                <CartesianGrid stroke="#e6dfd5" vertical={false} />
+                <XAxis dataKey="metric" stroke="#91877d" tick={{ fontSize: 10 }} />
+                <YAxis domain={[0, 100]} unit="%" stroke="#91877d" tick={{ fontSize: 10 }} />
+                <Tooltip contentStyle={{ background: '#fffdf9', border: '1px solid #d2c7ba', borderRadius: 12, color: '#14110f' }} formatter={(value) => [`${value}%`]} />
                 <Legend />
-                <Bar dataKey="faultcore" name="FaultCore" fill="#47dfba" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="baseline" name="Baseline" fill="#f7b955" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="faultcore" name="FaultCore" fill="#f26a21" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="baseline" name="Baseline" fill="#7651a8" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

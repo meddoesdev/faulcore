@@ -46,7 +46,7 @@ export function ExposureGraph({ graph }: ExposureGraphProps) {
         fitView
         fitViewOptions={{ padding: 0.2, maxZoom: 1.1 }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#26384a" />
+        <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#d8cfc4" />
         <Controls showInteractive={false} position="bottom-left" />
       </ReactFlow>
 
