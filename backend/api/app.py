@@ -1,10 +1,12 @@
-"""API shell with a real Phase 2 graph for the first scenario."""
+"""RecallScope HTTP routes and per-run coordination."""
 
-from uuid import uuid4
+from typing import Callable, Any
 
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.errors import install_error_handlers
+from backend.api.runs import RunCoordinator, run_agent_workflow
 from backend.models.api import (
     GraphData,
     Run,
@@ -23,10 +25,13 @@ SCENARIOS = (
 )
 
 
-def create_app() -> FastAPI:
+def create_app(agent_runner: Callable[[Any, str], Any] = run_agent_workflow,
+               *, timeout_seconds: float = 120.0) -> FastAPI:
     app = FastAPI(title="FaultCore RecallScope")
+    app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+                       allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
     install_error_handlers(app)
-    mock_runs: dict[str, Run] = {}
+    coordinator = RunCoordinator(agent_runner, timeout_seconds=timeout_seconds)
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -46,13 +51,12 @@ def create_app() -> FastAPI:
 
     @app.post("/api/runs", response_model=StartRunResponse, status_code=status.HTTP_202_ACCEPTED)
     def start_run(request: StartRunRequest) -> StartRunResponse:
-        run_id = f"run-{uuid4().hex}"
-        mock_runs[run_id] = Run(run_id=run_id, scenario_id=request.scenario_id, mode=request.mode, status="running")
+        run_id = coordinator.start(request.scenario_id, request.mode)
         return StartRunResponse(run_id=run_id, status="running")
 
     @app.get("/api/runs/{run_id}", response_model=Run)
     def get_run(run_id: str) -> Run:
-        run = mock_runs.get(run_id)
+        run = coordinator.get(run_id)
         if run is None:
             raise HTTPException(status_code=404, detail="Run not found")
         return run
