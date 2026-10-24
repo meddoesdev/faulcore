@@ -1,11 +1,8 @@
 import {
   Activity,
-  Boxes,
-  ChevronsLeftRightEllipsis,
-  CircleUserRound,
-  Command,
-  Radio,
-  Search,
+  GitBranch,
+  ListChecks,
+  RadioTower,
   ShieldCheck,
 } from 'lucide-react'
 import type { PropsWithChildren } from 'react'
@@ -19,77 +16,30 @@ interface AppShellProps extends PropsWithChildren {
 }
 
 export function AppShell({ view, incidentLabel, onNavigate, children }: AppShellProps) {
+  const navigateTo = (target: 'command' | 'graph' | 'verification') => {
+    onNavigate('command')
+    if (target === 'graph') document.querySelector('.exposure-panel')?.scrollIntoView({ behavior: 'smooth' })
+    if (target === 'verification') document.getElementById('verification-heading')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
-    <div className="app-shell">
-      <aside className="left-rail">
-        <div className="brand-mark" aria-label="FaultCore RecallScope">
-          <Command size={19} strokeWidth={2.4} />
-          <span>FC</span>
+    <div className="rs-shell">
+      <a className="rs-skip-link" href="#main-content">Skip to incident workspace</a>
+      <header className="rs-topbar">
+        <div className="rs-topbar-inner">
+          <button className="rs-wordmark" onClick={() => onNavigate('incidents')} aria-label="RecallScope home">RecallScope</button>
+          <nav className="rs-primary-nav" aria-label="Primary navigation">
+            <button className="rs-nav-button" data-active={view === 'incidents'} onClick={() => onNavigate('incidents')}><RadioTower size={16} />Incidents</button>
+            <button className="rs-nav-button" data-active={view === 'command'} disabled={!incidentLabel} onClick={() => navigateTo('command')}><Activity size={16} />Command centre</button>
+            <button className="rs-nav-button" disabled={!incidentLabel} onClick={() => navigateTo('graph')}><GitBranch size={16} />Exposure</button>
+            <button className="rs-nav-button" disabled={!incidentLabel} onClick={() => navigateTo('verification')}><ListChecks size={16} />Verification</button>
+          </nav>
+          <div className="rs-topbar-status" aria-label="Simulation environment online"><i /><span>Simulation online</span></div>
         </div>
-
-        <nav className="rail-nav" aria-label="Primary navigation">
-          <button
-            className="rail-button"
-            data-active={view === 'incidents'}
-            onClick={() => onNavigate('incidents')}
-            aria-label="Incidents"
-          >
-            <Radio size={19} />
-            <span>Incidents</span>
-          </button>
-          <button
-            className="rail-button"
-            data-active={view === 'command'}
-            disabled={!incidentLabel}
-            onClick={() => onNavigate('command')}
-            aria-label="Command centre"
-          >
-            <Activity size={19} />
-            <span>Command</span>
-          </button>
-          <button
-            className="rail-button"
-            disabled={!incidentLabel}
-            onClick={() => onNavigate('command')}
-            aria-label="Exposure trace graph"
-          >
-            <ChevronsLeftRightEllipsis size={19} />
-            <span>Trace</span>
-          </button>
-          <button
-            className="rail-button"
-            disabled={!incidentLabel}
-            onClick={() => document.getElementById('verification-heading')?.scrollIntoView({ behavior: 'smooth' })}
-            aria-label="Verification"
-          >
-            <ShieldCheck size={19} />
-            <span>Verify</span>
-          </button>
-        </nav>
-
-        <div className="rail-footer" aria-label="System status">
-          <span className="system-dot" />
-          <span>SIM ONLINE</span>
-        </div>
-      </aside>
-
-      <div className="app-frame">
-        <header className="top-bar">
-          <div className="top-context">
-            <Boxes size={17} />
-            <span>RECALLSCOPE</span>
-            <span className="top-divider">/</span>
-            <strong>{incidentLabel ?? 'INCIDENT INTAKE'}</strong>
-          </div>
-          <div className="top-actions">
-            <button className="icon-button" aria-label="Search" disabled><Search size={17} /></button>
-            <div className="environment-chip"><span /> Simulation environment</div>
-            <CircleUserRound size={20} className="user-icon" />
-          </div>
-        </header>
-
-        <div className="workspace">{children}</div>
-      </div>
+      </header>
+      <div className="rs-context"><div className="rs-context-inner"><strong>{incidentLabel ?? 'No incident selected'}</strong><span>Evidence defines scope. Policy defines authority.</span></div></div>
+      <main className="rs-main" id="main-content"><div className="rs-workspace">{children}</div></main>
+      <footer className="rs-trust-footer"><div><strong><ShieldCheck size={17} /> Every action logged. Every decision traceable.</strong><p>Public notices, disposal, and release require human authorization.</p></div></footer>
     </div>
   )
 }
