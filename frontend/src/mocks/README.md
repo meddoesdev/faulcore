@@ -3,5 +3,6 @@
 The fixture set contains three scenario definitions, one graph per scenario, and
 one completed run for every scenario/mode pair (six completed runs total).
 
-Set `VITE_USE_MOCKS=true` (the default) to use these files. Set it to `false`
-and provide `VITE_API_URL` to use Person B's API without changing UI code.
+The frontend defaults to the live API. Set `VITE_USE_MOCKS=true` explicitly to
+use these files. Keep it `false` (or unset) and provide `VITE_API_URL` to use
+the backend without changing UI code.

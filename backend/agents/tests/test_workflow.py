@@ -6,8 +6,10 @@ from dataclasses import dataclass
 
 from backend.agents.mock_provider import DeterministicMockProvider
 from backend.agents.providers import (
+    GeminiProvider,
     InvalidModelOutput,
     ModelRequest,
+    OpenAICompatibleProvider,
     ProviderUnavailable,
     ValidatedProvider,
     provider_chain_from_env,
@@ -167,7 +169,42 @@ class WorkflowTests(unittest.TestCase):
         providers = provider_chain_from_env({})
         self.assertEqual([item.name for item in providers], ["groq", "gemini", "openrouter"])
         self.assertEqual(providers[0].model, "openai/gpt-oss-120b")
-        self.assertEqual(providers[2].model, "deepseek/deepseek-v4-flash-0731:free")
+        self.assertEqual(providers[1].model, "gemini-3.8-flash")
+        self.assertEqual(providers[2].model, "xingchen-agi/xing4.0-29b-a4b:free")
+
+    def test_groq_uses_strict_structured_output(self) -> None:
+        provider = OpenAICompatibleProvider(
+            name="groq", model="openai/gpt-oss-120b", api_key="test-key",
+            url="https://api.groq.com/openai/v1/chat/completions", strict=True,
+        )
+        request = ModelRequest(role="baseline", system_prompt="test", payload={}, output_type=BaselineOutput)
+        body = provider._body(request, None)
+        self.assertTrue(body["response_format"]["json_schema"]["strict"])
+        self.assertEqual(provider._headers()["Authorization"], "Bearer test-key")
+        self.assertEqual(provider._headers()["User-Agent"], "RecallScope/1.0")
+
+    def test_gemini_keeps_key_out_of_url_and_uses_structured_json(self) -> None:
+        provider = GeminiProvider(model="gemini-3.8-flash", api_key="test-key")
+        request = ModelRequest(role="baseline", system_prompt="test", payload={}, output_type=BaselineOutput)
+        body = provider._body(request, None)
+        self.assertNotIn("test-key", provider._url)
+        self.assertEqual(provider._headers()["x-goog-api-key"], "test-key")
+        self.assertEqual(body["generationConfig"]["responseMimeType"], "application/json")
+        self.assertIn("responseJsonSchema", body["generationConfig"])
+
+    def test_openrouter_requires_parameter_compatible_routing(self) -> None:
+        providers = provider_chain_from_env({
+            "OPENROUTER_API_KEY": "test-key",
+            "OPENROUTER_SITE_URL": "https://example.test",
+            "OPENROUTER_APP_NAME": "RecallScope Test",
+        })
+        provider = providers[2]
+        request = ModelRequest(role="baseline", system_prompt="test", payload={}, output_type=BaselineOutput)
+        body = provider._body(request, None)
+        headers = provider._headers()
+        self.assertEqual(body["provider"], {"require_parameters": True})
+        self.assertEqual(headers["HTTP-Referer"], "https://example.test")
+        self.assertEqual(headers["X-Title"], "RecallScope Test")
 
 
 @dataclass(frozen=True)

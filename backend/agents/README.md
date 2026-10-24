@@ -9,21 +9,36 @@ Priority order:
 
 1. Groq — `openai/gpt-oss-120b`
 2. Gemini — `gemini-3.8-flash` by default, configurable
-3. OpenRouter — `deepseek/deepseek-v4-flash-0731:free`
+3. OpenRouter — `xingchen-agi/xing4.0-29b-a4b:free`
 4. deterministic mock — always labeled in run provenance
 
-Configure provider-specific keys without committing an `.env` file:
+Copy the root template to a local ignored file, then add the three keys there:
 
 ```bash
-export GROQ_API_KEY=...
-export GEMINI_API_KEY=...
-export OPENROUTER_API_KEY=...
+cp .env.example .env
 ```
+
+The backend loads the root `.env` without overriding variables already set by
+the process. Never commit `.env` or paste keys into run requests or logs.
 
 Model IDs can be overridden with `GROQ_MODEL`, `GEMINI_MODEL`, and
 `OPENROUTER_MODEL`. The generic `LLM_PROVIDER`, `LLM_MODEL`, and `LLM_API_KEY`
 variables are also supported when explicitly forcing one primary provider.
 Set `LLM_PROVIDER=mock` for deterministic offline operation.
+
+The originally selected `deepseek/deepseek-v4-flash-0731:free` endpoint was
+withdrawn by OpenRouter. The default now uses a fixed, currently free model
+with advertised structured-output support, preserving the same-model-per-run
+rule. Override `OPENROUTER_MODEL` when a better free endpoint becomes available.
+
+Validate every configured credential with a minimal structured-output request:
+
+```bash
+python -m backend.agents.smoke_providers
+```
+
+This prints provider names, model IDs, and pass/fail status only. It never
+prints keys or response content.
 
 The Reviewer request is constructed from an immutable incident and raw trace
 snapshot through a separate code path. It never receives Investigator output.

@@ -9,8 +9,10 @@ import urllib.error
 import urllib.request
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Generic, Mapping, Protocol, TypeVar
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
 
@@ -144,9 +146,28 @@ class JsonHttpProvider(ValidatedProvider):
                         return json.loads(response.read().decode("utf-8"))
                 except Exception as retry_exc:  # network boundary
                     raise ProviderUnavailable(f"{self.name} remained rate limited") from retry_exc
-            raise ProviderUnavailable(f"{self.name} HTTP {exc.code}") from exc
+            detail = self._safe_http_error_detail(exc)
+            suffix = f": {detail}" if detail else ""
+            raise ProviderUnavailable(f"{self.name} HTTP {exc.code}{suffix}") from exc
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
             raise ProviderUnavailable(f"{self.name} request failed") from exc
+
+    @staticmethod
+    def _safe_http_error_detail(exc: urllib.error.HTTPError) -> str:
+        """Return a short provider message without echoing request credentials."""
+        try:
+            payload = json.loads(exc.read().decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError, OSError):
+            return ""
+        error = payload.get("error", payload) if isinstance(payload, dict) else {}
+        if isinstance(error, dict):
+            detail = error.get("message") or error.get("status") or error.get("code")
+        else:
+            detail = error
+        if not isinstance(detail, (str, int, float)):
+            return ""
+        text = " ".join(str(detail).split())
+        return text[:300]
 
     def _complete(self, request: ModelRequest[OutputT], *, repair: str | None) -> Any:
         return self._extract(self._post(self._body(request, repair)))
@@ -155,12 +176,29 @@ class JsonHttpProvider(ValidatedProvider):
 class OpenAICompatibleProvider(JsonHttpProvider):
     """Groq and OpenRouter adapter using strict JSON-schema responses."""
 
-    def __init__(self, *, name: str, model: str, api_key: str | None, url: str, strict: bool) -> None:
+    def __init__(
+        self,
+        *,
+        name: str,
+        model: str,
+        api_key: str | None,
+        url: str,
+        strict: bool,
+        extra_headers: Mapping[str, str] | None = None,
+        require_parameters: bool = False,
+    ) -> None:
         super().__init__(name=name, model=model, api_key=api_key, url=url)
         self._strict = strict
+        self._extra_headers = dict(extra_headers or {})
+        self._require_parameters = require_parameters
 
     def _headers(self) -> dict[str, str]:
-        return {"Authorization": f"Bearer {self._api_key}", "Content-Type": "application/json"}
+        return {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "RecallScope/1.0",
+            **self._extra_headers,
+        }
 
     def _body(self, request: ModelRequest[OutputT], repair: str | None) -> dict[str, Any]:
         messages = [
@@ -169,7 +207,7 @@ class OpenAICompatibleProvider(JsonHttpProvider):
         ]
         if repair:
             messages.append({"role": "user", "content": repair})
-        return {
+        body = {
             "model": self.model,
             "temperature": 0,
             "messages": messages,
@@ -182,6 +220,9 @@ class OpenAICompatibleProvider(JsonHttpProvider):
                 },
             },
         }
+        if self._require_parameters:
+            body["provider"] = {"require_parameters": True}
+        return body
 
     def _extract(self, response: dict[str, Any]) -> Any:
         try:
@@ -192,11 +233,15 @@ class OpenAICompatibleProvider(JsonHttpProvider):
 
 class GeminiProvider(JsonHttpProvider):
     def __init__(self, *, model: str, api_key: str | None) -> None:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key or ''}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         super().__init__(name="gemini", model=model, api_key=api_key, url=url)
 
     def _headers(self) -> dict[str, str]:
-        return {"Content-Type": "application/json"}
+        return {
+            "Content-Type": "application/json",
+            "User-Agent": "RecallScope/1.0",
+            "x-goog-api-key": self._api_key or "",
+        }
 
     def _body(self, request: ModelRequest[OutputT], repair: str | None) -> dict[str, Any]:
         content = json.dumps(request.payload, sort_keys=True)
@@ -228,7 +273,11 @@ class ProviderAttempt:
 
 def provider_chain_from_env(environ: Mapping[str, str] | None = None) -> list[LLMProvider]:
     """Build the approved priority order. The mock is appended by the workflow."""
-    env = environ or os.environ
+    if environ is None:
+        load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
+        env: Mapping[str, str] = os.environ
+    else:
+        env = environ
     generic_key = env.get("LLM_API_KEY")
     forced = env.get("LLM_PROVIDER", "").lower()
 
@@ -246,10 +295,15 @@ def provider_chain_from_env(environ: Mapping[str, str] | None = None) -> list[LL
     openrouter = OpenAICompatibleProvider(
         name="openrouter",
         model=env.get("OPENROUTER_MODEL", env.get("LLM_MODEL") if forced == "openrouter" else None)
-        or "deepseek/deepseek-v4-flash-0731:free",
+        or "xingchen-agi/xing4.0-29b-a4b:free",
         api_key=env.get("OPENROUTER_API_KEY") or (generic_key if forced == "openrouter" else None),
         url="https://openrouter.ai/api/v1/chat/completions",
         strict=False,
+        extra_headers={
+            "HTTP-Referer": env.get("OPENROUTER_SITE_URL", "http://localhost:5173"),
+            "X-Title": env.get("OPENROUTER_APP_NAME", "RecallScope"),
+        },
+        require_parameters=True,
     )
     providers: dict[str, LLMProvider] = {"groq": groq, "gemini": gemini, "openrouter": openrouter}
     if forced and forced != "mock":
